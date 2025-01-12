@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: "documentstore"
+  cloud:
+    gcp:
+        project-id: ${GCP_PROJECT_ID:muditsahni-bb2eb}
+        credentials:
+            location: ${GCP_CREDENTIALS_LOCATION:unknown}
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
+  security:
+    filter:
+      dispatcher-types: request,async
+
+app:
+  upload:
+    max-files: 10
+    max-file-size: 10485760  # 10MB in bytes
+    allowed-types:
+      - application/pdf
+
+gcp:
+  storage:
+    bucket: ""
+  region: ${GCP_REGION:asia-south1}  # Added region with default
+  cloud-tasks:
+    queue: ${GCP_QUEUE_NAME:muditsahni-bb2eb}  # Required for Cloud Tasks
+
+document-parser:
+  uri: "/api"
+  version: "v1"
+  upload: "upload"
+
+logging:
+  level:
+    com.muditsahni.documentstore: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
+    okhttp3: DEBUG  # Enable for detailed HTTP logging
