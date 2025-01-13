@@ -1,25 +1,8 @@
 # Use an official Gradle image with JDK for Kotlin development
-FROM gradle:jdk17 AS build
+FROM gradle:jdk21 AS build
 
 # Set the working directory in the container
 WORKDIR /app
-
-# Create a directory for certificates
-RUN mkdir -p /usr/local/share/ca-certificates/extra
-COPY "./ssl-com-root.crt" /usr/local/share/ca-certificates/extra/
-
-
-# Update CA certificates
-RUN update-ca-certificates
-
-# Add the certificates to Java keystore
-RUN keytool -importcert -trustcacerts \
-    -file "/usr/local/share/ca-certificates/extra/ssl-com-root.crt" \
-    -alias sslcom-ev-root-r2 \
-    -keystore $JAVA_HOME/lib/security/cacerts \
-    -storepass changeit \
-    -noprompt && \
-
 
 # Copy the Gradle configuration files
 COPY build.gradle.kts settings.gradle.kts ./
@@ -39,7 +22,7 @@ RUN chmod +x ./gradlew
 RUN ./gradlew build --no-daemon
 
 # Use Amazon Corretto as the base image for running the application
-FROM amazoncorretto:17-alpine
+FROM amazoncorretto:21-alpine
 
 WORKDIR /app
 
