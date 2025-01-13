@@ -41,3 +41,7 @@ out/
 
 ./secrets
 secrets/
+
+./dev/
+dev/
+gradle/
