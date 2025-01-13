@@ -1,46 +1,54 @@
-# Build stage
-FROM gradle:8.12.0-jdk21 AS build
+# Use an official Gradle image with JDK for Kotlin development
+FROM gradle:jdk17 AS build
+
+# Set the working directory in the container
 WORKDIR /app
 
-# Copy only dependency-related files first
+# Create a directory for certificates
+RUN mkdir -p /usr/local/share/ca-certificates/extra
+COPY "./ssl-com-root.crt" /usr/local/share/ca-certificates/extra/
+
+
+# Update CA certificates
+RUN update-ca-certificates
+
+# Add the certificates to Java keystore
+RUN keytool -importcert -trustcacerts \
+    -file "/usr/local/share/ca-certificates/extra/ssl-com-root.crt" \
+    -alias sslcom-ev-root-r2 \
+    -keystore $JAVA_HOME/lib/security/cacerts \
+    -storepass changeit \
+    -noprompt && \
+
+
+# Copy the Gradle configuration files
 COPY build.gradle.kts settings.gradle.kts ./
 COPY gradle gradle
+COPY gradlew gradlew
+COPY gradlew.bat gradlew.bat
 
-# Download dependencies only - this layer gets cached
-RUN gradle dependencies --no-daemon
+# Copy the source code
+# Assuming standard Kotlin project structure
+COPY src ./src
 
-# Copy source code
-COPY src src
+# Make gradlew executable
+RUN chmod +x ./gradlew
 
-# Build with specific memory constraints
-RUN gradle build --no-daemon -x test \
-    --gradle-user-home ~/.gradle \
-    -Dorg.gradle.jvmargs="-Xmx2048m -XX:+HeapDumpOnOutOfMemoryError" \
-    -Dorg.gradle.workers.max=2
+# Build the application
+# Using gradlew instead of gradle for better version control
+RUN ./gradlew build --no-daemon
 
-# Run stage
-FROM eclipse-temurin:21-jre-alpine
+# Use Amazon Corretto as the base image for running the application
+FROM amazoncorretto:17-alpine
+
 WORKDIR /app
 
-# Add necessary packages
-RUN apk add --no-cache curl
+# Copy the built JAR file from the build stage
+# Assuming your JAR is built in the 'build/libs' directory
+COPY --from=build /app/build/libs/*.jar ./app.jar
 
-# Create a non-root user
-RUN addgroup -S spring && adduser -S spring -G spring
-USER spring:spring
+# Expose the port your application runs on
+EXPOSE 8080
 
-# Copy the built jar from build stage
-COPY --from=build /app/build/libs/*.jar app.jar
-
-# Set Java options for containers
-ENV JAVA_OPTS="\
-    -XX:InitialRAMPercentage=50.0 \
-    -XX:MaxRAMPercentage=70.0 \
-    -Djava.security.egd=file:/dev/./urandom \
-    -Dnetworkaddress.cache.ttl=60 \
-    --enable-preview"
-
-ENV PORT=8080
-EXPOSE ${PORT}
-
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar --server.port=${PORT}"]
+# Command to run the application
+CMD ["java", "-jar", "app.jar"]

@@ -3,13 +3,22 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 
 plugins {
-	id("org.jetbrains.kotlin.jvm") version "2.1.0"
 //	kotlin("jvm") version "2.1.0"
-	kotlin("plugin.spring") version "2.1.0"
-	kotlin("plugin.serialization") version "2.1.0"
 	id("org.springframework.boot") version "3.4.0"
 	id("io.spring.dependency-management") version "1.1.6"
+	kotlin("jvm") version "1.9.22"
+	kotlin("plugin.spring") version "1.9.22"
+	kotlin("plugin.serialization") version "1.9.22"
+//	kotlin("plugin.spring") version "2.1.0"
+//	kotlin("plugin.serialization") version "2.1.0"
 }
+
+repositories {
+	gradlePluginPortal()
+	mavenCentral()
+	google()
+}
+
 
 group = "com.muditsahni"
 version = "0.0.1-SNAPSHOT"
@@ -22,16 +31,12 @@ java {
 
 
 
-repositories {
-	gradlePluginPortal()
-	mavenCentral()
-	google()
-}
-
 dependencies {
 	// Spring Boot core dependencies
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
+	implementation("org.springframework.boot:org.springframework.boot.gradle.plugin:3.4.0")
+	implementation("io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.1.7")
 
 	// Server-Sent Events specific
 	implementation("org.springframework.boot:spring-boot-starter-integration")
