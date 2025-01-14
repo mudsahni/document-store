@@ -28,11 +28,22 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Get Firebase Credentials
+        run: |
+          gcloud secrets versions access latest --secret="firebase-sa-key" > firebase-sa-key.json
+
+      - name: Get GCP Service Account Key
+        run: |
+          gcloud secrets versions access latest --secret="gcp-sa-key" > gcp-sa-key.json
+
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle
+      - name: Build with Gradle (Skip Tests)
         run: ./gradlew build
+        env:
+          GCP_SA_KEY: gcp-sa-key.json
+          FIREBASE_SA_KEY: firebase-sa-key.json
 
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
@@ -59,3 +70,6 @@ jobs:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
           image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          secrets: |
+            FIREBASE_SA_KEY=${{ secrets.FIREBASE_SA_KEY }}
+            GCP_SA_KEY=${{ secrets.GCP_SA_KEY }}
