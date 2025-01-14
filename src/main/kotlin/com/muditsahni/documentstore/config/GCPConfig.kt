@@ -43,7 +43,7 @@ class GCPConfig {
 
     private fun gcpCredentials(): Credentials {
         return try {
-                GoogleCredentials.fromStream(FileInputStream("/secrets/gcp.json"))
+                GoogleCredentials.fromStream(FileInputStream("/secrets/gcp/gcp.json"))
             }
             catch (e: IOException) {
                 logger.info { "Could not find secret at /secrets/firebase.json, falling back to local development path" }

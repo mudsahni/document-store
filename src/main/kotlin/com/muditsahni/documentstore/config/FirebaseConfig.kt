@@ -30,7 +30,7 @@ class FirebaseConfig {
         } catch (e: IllegalStateException) {
             val credentials = try {
                 // Try Cloud Run mounted secret first
-                GoogleCredentials.fromStream(FileInputStream("/secrets/firebase.json"))
+                GoogleCredentials.fromStream(FileInputStream("/secrets/firebase/firebase.json"))
             } catch (e: IOException) {
                 logger.info { "Could not find secret at /secrets/firebase.json, falling back to local development path" }
                 // Local development - use file
