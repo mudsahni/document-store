@@ -62,7 +62,7 @@ jobs:
 
       - name: Configure Docker for Google Container Registry
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev gcr.io
+          gcloud auth configure-docker us-central1-docker.pkg.dev,gcr.io
           REPO_NAME="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}"
           gcloud container images list --repository=$REPO_NAME || \
           echo "Repository doesn't exist yet, it will be created on first push"
