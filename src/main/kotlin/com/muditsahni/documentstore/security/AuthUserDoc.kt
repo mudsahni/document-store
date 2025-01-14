@@ -1,4 +1,4 @@
-package com.muditsahni.documentstore.model.entity
+package com.muditsahni.documentstore.security
 
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.cloud.firestore.DocumentSnapshot

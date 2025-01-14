@@ -1,5 +1,6 @@
 package com.muditsahni.documentstore.model.entity
 
+import com.google.cloud.Timestamp
 import com.muditsahni.documentstore.exception.CollectionError
 import com.muditsahni.documentstore.model.dto.request.CollectionCreationStatus
 import com.muditsahni.documentstore.model.dto.request.GetCollectionResponse
@@ -16,9 +17,9 @@ data class Collection(
     var documents: MutableMap<String, DocumentStatus> = mutableMapOf(),
     var error: CollectionError? = null,
     val createdBy: String,
-    val createdDate: Long,
+    val createdAt: Timestamp = Timestamp.now(),
     var updatedBy: String? = null,
-    var updatedDate: Long? = null
+    var updatedAt: Timestamp? = null
 
 )
 
@@ -30,8 +31,8 @@ fun Collection.toCollectionStatus(): CollectionCreationStatus {
         type = this.type,
         documents = this.documents,
         error = this.error,
-        createdAt = this.createdDate,
-        updatedAt = this.updatedDate
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
     )
 }
 
@@ -41,7 +42,7 @@ fun Collection.toGetCollectionResponse(): GetCollectionResponse {
         name = this.name,
         type = this.type,
         documents = this.documents.keys.toList(),
-        createdAt = this.createdDate,
-        updatedAt = this.updatedDate
+        createdAt = this.createdAt,
+        updatedAt = this.updatedAt
     )
 }

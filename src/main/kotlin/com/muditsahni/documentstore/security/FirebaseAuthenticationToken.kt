@@ -19,8 +19,6 @@ class FirebaseAuthenticationToken(
         isAuthenticated = true
     }
 
-    fun getTenant(): Tenant = tenant
-    fun getRole(): UserRole = role
     override fun getCredentials() = token
-    override fun getPrincipal() = FirebaseUserDetails(uid, claims)
+    override fun getPrincipal() = FirebaseUserDetails(uid, claims, tenant, role, authorities.map { it.authority })
 }

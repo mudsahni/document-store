@@ -1,5 +1,6 @@
 package com.muditsahni.documentstore.model.dto.request
 
+import com.google.cloud.Timestamp
 import com.muditsahni.documentstore.model.enum.CollectionType
 
 data class GetCollectionResponse(
@@ -7,6 +8,6 @@ data class GetCollectionResponse(
     val name: String,
     val type: CollectionType,
     val documents: List<String>,
-    val createdAt: Long,
-    val updatedAt: Long? = null
+    val createdAt: Timestamp,
+    val updatedAt: Timestamp? = null
 )

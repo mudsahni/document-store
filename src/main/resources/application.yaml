@@ -22,14 +22,16 @@ app:
       - application/pdf
 
 gcp:
+  project-id: ${spring.cloud.gcp.project-id}
   storage:
     bucket: ""
   region: ${GCP_REGION:asia-south1}  # Added region with default
   cloud-tasks:
-    queue: ${GCP_QUEUE_NAME:muditsahni-bb2eb}  # Required for Cloud Tasks
+    location: ${GCP_REGION:asia-south1}  # Required for Cloud Tasks
+    queue: ${GCP_QUEUE_NAME:document-parser-queue}  # Required for Cloud Tasks
 
 document-parser:
-  uri: "/api"
+  uri: "https://google.com/api"
   version: "v1"
   upload: "upload"
 

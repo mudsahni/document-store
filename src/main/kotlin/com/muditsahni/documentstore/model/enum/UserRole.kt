@@ -1,7 +1,5 @@
 package com.muditsahni.documentstore.model.enum
 
-import com.google.cloud.firestore.DocumentSnapshot
-
 enum class UserRole(val value: String) {
     ADMIN("admin"),
     POWER_USER("power_user"),
@@ -15,6 +13,10 @@ enum class UserRole(val value: String) {
                 it.value.equals(value, ignoreCase = true) ||
                         it.name.equals(value, ignoreCase = true)
             } ?: UNAUTHORIZED
+        }
+
+        fun evaluateRole(givenRole: UserRole, wantedRole: UserRole): Boolean {
+            return givenRole == wantedRole || givenRole == ADMIN
         }
     }
 

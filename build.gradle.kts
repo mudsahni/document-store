@@ -33,7 +33,7 @@ java {
 
 dependencies {
 	// Spring Boot core dependencies
-	implementation("org.springframework.boot:spring-boot-starter-web")
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
 	implementation("org.springframework.boot:spring-boot-starter-validation")
 	implementation("org.springframework.boot:org.springframework.boot.gradle.plugin:3.4.0")
 	implementation("io.spring.dependency-management:io.spring.dependency-management.gradle.plugin:1.1.7")
