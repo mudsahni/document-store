@@ -83,5 +83,5 @@ jobs:
           region: ${{ env.REGION }}
           image: asia-south2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
           secrets: |
-            FIREBASE_SA_KEY=projects/${{ env.PROJECT_ID }}/secrets/${{ secrets.FIREBASE_SA_KEY }}/versions/latest
-            GCP_SA_KEY=projects/${{ env.PROJECT_ID }}/secrets/${{ secrets.GCP_SA_KEY }}/versions/latest
+            /secrets/firebase.json=firebase-sa-key
+            /secrets/gcp.json=gcp-sa-key
