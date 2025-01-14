@@ -61,7 +61,10 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
+          FIREBASE_SA_KEY=$(cat firebase-sa-key.json)
+          GCP_SA_KEY=$(cat gcp-sa-key.json)
+          docker build --build-arg FIREBASE_SA_KEY="$FIREBASE_SA_KEY" \
+          --build-arg GCP_SA_KEY="$GCP_SA_KEY" -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
           docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
 
       - name: Deploy to Cloud Run
