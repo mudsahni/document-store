@@ -9,7 +9,7 @@ on:
 env:
   PROJECT_ID: muditsahni-bb2eb # Replace with your GCP Project ID
   SERVICE_NAME: documentstore # Replace with your Cloud Run service name
-  REGION: asia-south2-a # Replace with your desired region
+  REGION: asia-south2 # Replace with your desired region
 
 jobs:
   build-and-deploy:
@@ -62,18 +62,26 @@ jobs:
 
       - name: Configure Docker for Google Container Registry
         run: |
-          gcloud auth configure-docker us-central1-docker.pkg.dev,gcr.io
-          REPO_NAME="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}"
-          gcloud container images list --repository=$REPO_NAME || \
-          echo "Repository doesn't exist yet, it will be created on first push"
+          gcloud auth configure-docker
+
+      - name: Create GCR repository
+        run: |
+          gcloud container images add-tag \
+          gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest \
+          gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:init \
+          --quiet || true
 
       - name: Build and Push Docker image
         run: |
           FIREBASE_SA_KEY=$(cat firebase-sa-key.json)
           GCP_SA_KEY=$(cat gcp-sa-key.json)
+          IMAGE_PATH="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}"
           docker build --build-arg FIREBASE_SA_KEY="$FIREBASE_SA_KEY" \
-          --build-arg GCP_SA_KEY="$GCP_SA_KEY" -t gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }} .
-          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+            --build-arg GCP_SA_KEY="$GCP_SA_KEY" \
+            -t $IMAGE_PATH:${{ github.sha }} \
+            -t $IMAGE_PATH:latest .
+          docker push $IMAGE_PATH:${{ github.sha }}
+          docker push $IMAGE_PATH:latest
 
       - name: Deploy to Cloud Run
         uses: google-github-actions/deploy-cloudrun@v2
