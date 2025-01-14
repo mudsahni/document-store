@@ -56,9 +56,6 @@ jobs:
 
       - name: Build with Gradle
         run: ./gradlew build
-        env:
-          GCP_SA_KEY: gcp-sa-key.json
-          FIREBASE_SA_KEY: firebase-sa-key.json
 
       - name: Configure Docker for Artifact Registry
         run: |
@@ -66,13 +63,8 @@ jobs:
 
       - name: Build and Push Docker image
         run: |
-          FIREBASE_SA_KEY=$(cat firebase-sa-key.json)
-          GCP_SA_KEY=$(cat gcp-sa-key.json)
           IMAGE_PATH="asia-south2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/app"
-          docker build --build-arg FIREBASE_SA_KEY="$FIREBASE_SA_KEY" \
-            --build-arg GCP_SA_KEY="$GCP_SA_KEY" \
-            -t $IMAGE_PATH:${{ github.sha }} \
-            -t $IMAGE_PATH:latest .
+          docker build -t $IMAGE_PATH:${{ github.sha }} -t $IMAGE_PATH:latest .
           docker push $IMAGE_PATH:${{ github.sha }}
           docker push $IMAGE_PATH:latest
 
