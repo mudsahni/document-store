@@ -54,7 +54,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Build with Gradle (Skip Tests)
+      - name: Build with Gradle
         run: ./gradlew build
         env:
           GCP_SA_KEY: gcp-sa-key.json
@@ -62,7 +62,7 @@ jobs:
 
       - name: Configure Docker for Google Container Registry
         run: |
-          gcloud auth configure-docker gcr.io
+          gcloud auth configure-docker us-central1-docker.pkg.dev gcr.io
           REPO_NAME="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}"
           gcloud container images list --repository=$REPO_NAME || \
           echo "Repository doesn't exist yet, it will be created on first push"
