@@ -60,22 +60,15 @@ jobs:
           GCP_SA_KEY: gcp-sa-key.json
           FIREBASE_SA_KEY: firebase-sa-key.json
 
-      - name: Configure Docker for Google Container Registry
+      - name: Configure Docker for Artifact Registry
         run: |
-          gcloud auth configure-docker
-
-      - name: Create GCR repository
-        run: |
-          gcloud container images add-tag \
-          gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:latest \
-          gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:init \
-          --quiet || true
+          gcloud auth configure-docker asia-south2-docker.pkg.dev
 
       - name: Build and Push Docker image
         run: |
           FIREBASE_SA_KEY=$(cat firebase-sa-key.json)
           GCP_SA_KEY=$(cat gcp-sa-key.json)
-          IMAGE_PATH="gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}"
+          IMAGE_PATH="asia-south2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}/app"
           docker build --build-arg FIREBASE_SA_KEY="$FIREBASE_SA_KEY" \
             --build-arg GCP_SA_KEY="$GCP_SA_KEY" \
             -t $IMAGE_PATH:${{ github.sha }} \
@@ -88,7 +81,7 @@ jobs:
         with:
           service: ${{ env.SERVICE_NAME }}
           region: ${{ env.REGION }}
-          image: gcr.io/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
+          image: asia-south2-docker.pkg.dev/${{ env.PROJECT_ID }}/${{ env.SERVICE_NAME }}:${{ github.sha }}
           secrets: |
             FIREBASE_SA_KEY=projects/${{ env.PROJECT_ID }}/secrets/${{ secrets.FIREBASE_SA_KEY }}/versions/latest
             GCP_SA_KEY=projects/${{ env.PROJECT_ID }}/secrets/${{ secrets.GCP_SA_KEY }}/versions/latest
