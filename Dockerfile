@@ -30,6 +30,8 @@ WORKDIR /app
 
 ENV ENV=prod
 ENV SPRING_PROFILES_ACTIVE=prod
+ENV APPLICATION_REGION=asia-south2
+ENV CLOUD_TASKS_REGION=asia-south1
 
 # Install required native libraries and dependencies
 RUN apt-get update && \

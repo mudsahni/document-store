@@ -34,6 +34,8 @@ class CollectionsService(
     @Value("\${spring.cloud.gcp.project-number}") private val projectNumber: String,
     @Value("\${gcp.project-id}") private val gcpProjectId: String,
     @Value("\${gcp.region}") private val gcpRegion: String,
+    @Value("\${spring.application.region}") private val applicationRegion: String,
+    @Value("\${gcp.cloud-tasks.location}") private val cloudTasksRegion: String,
     @Value("\${gcp.cloud-tasks.queue}") private val cloudTasksQueue: String
 ) {
 
@@ -151,7 +153,7 @@ class CollectionsService(
                 file = fileContentBase64,     // Send Base64 encoded string
                 fileName = document.filename(),
                 uploadPath = "${tenantId}/${collectionId}",
-                callbackUrl = "https://${applicationName}-${projectNumber}.${gcpRegion}.run.app/api/v1/upload/callback"
+                callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/upload/callback"
             )
 
             val taskBody = objectMapper.writeValueAsString(task)

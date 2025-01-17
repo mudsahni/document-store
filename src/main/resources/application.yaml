@@ -3,6 +3,7 @@ spring:
     active: dev  # default to dev
   application:
     name: "documentstore"
+    region: ${APPLICATION_REGION:asia-south2}
   cloud:
     gcp:
         project-number: ${GCP_PROJECT_NUMBER:741672280176}
@@ -28,7 +29,7 @@ gcp:
   service-account: ${GCP_SERVICE_ACCOUNT}
   region: ${GCP_REGION:asia-south1}  # Added region with default
   cloud-tasks:
-    location: ${GCP_REGION:asia-south1}  # Required for Cloud Tasks
+    location: ${CLOUDTASKS_REGION:asia-south1}  # Required for Cloud Tasks
     queue: ${GCP_QUEUE_NAME:document-parser-queue}  # Required for Cloud Tasks
 
 document-parser:

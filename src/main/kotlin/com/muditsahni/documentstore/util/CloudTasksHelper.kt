@@ -1,6 +1,5 @@
 package com.muditsahni.documentstore.util
 
-import com.google.auth.http.AuthHttpConstants.AUTHORIZATION
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.google.cloud.tasks.v2.HttpMethod
 import com.google.cloud.tasks.v2.HttpRequest
@@ -9,7 +8,6 @@ import com.google.cloud.tasks.v2.Task
 import com.google.protobuf.ByteString
 import mu.KotlinLogging
 import org.springframework.http.HttpHeaders.CONTENT_TYPE
-import org.springframework.http.MediaType
 import org.springframework.http.MediaType.APPLICATION_JSON
 
 object CloudTasksHelper {
