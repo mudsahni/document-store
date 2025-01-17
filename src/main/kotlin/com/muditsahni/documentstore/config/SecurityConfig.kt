@@ -43,7 +43,7 @@ class SecurityConfig(
             .securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/v1/collections/*/callback")) // Only for callback endpoints
             .authorizeExchange { auth ->
                 auth.anyExchange()
-                    .hasAuthority("SCOPE_https://www.googleapis.com/auth/cloud-platform")
+                    .hasAuthority("SCOPE_${GoogleCredentialsConfig.GOOGLE_CREDENTIALS_SCOPE}")
             }
             .oauth2ResourceServer { oauth2 ->
                 oauth2.jwt { jwt ->

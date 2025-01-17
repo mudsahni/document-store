@@ -22,15 +22,15 @@ data class User(
 fun DocumentSnapshot.toUser(): User {
     return User(
         id = id,
-        firstName = getString("first_name") ?: "",
-        lastName = getString("last_name") ?: "",
+        firstName = getString("firstName") ?: "",
+        lastName = getString("lastName") ?: "",
         email = getString("email") ?: "",
         role = UserRole.fromValue(getString("role") ?: UserRole.UNAUTHORIZED.value),
         collections = get("collections") as MutableList<String>,
         documents = get("documents") as MutableList<String>,
-        createdBy = getString("created_by") ?: "",
-        createdAt = getTimestamp("created_at") ?: Timestamp.now(),
-        updatedAt = getTimestamp("updated_at"),
-        updatedBy = getString("updated_by")
+        createdBy = getString("createdBy") ?: "",
+        createdAt = getTimestamp("createdAt") ?: Timestamp.now(),
+        updatedAt = getTimestamp("updatedAt"),
+        updatedBy = getString("updatedBy")
     )
 }

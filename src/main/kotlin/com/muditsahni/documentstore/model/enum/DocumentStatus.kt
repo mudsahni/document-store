@@ -7,5 +7,15 @@ enum class DocumentStatus {
     PARSED,
     VALIDATED,
     ERROR,
-    APPROVED
+    APPROVED;
+
+    companion object {
+        fun fromString(documentStatus: String): DocumentStatus {
+            return try {
+                valueOf(documentStatus.uppercase())
+            } catch (e: IllegalArgumentException) {
+                throw IllegalArgumentException("Invalid DocumentStatus value: $documentStatus")
+            }
+        }
+    }
 }

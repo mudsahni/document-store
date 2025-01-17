@@ -10,7 +10,7 @@ data class UploadDocumentTask(
     val userId: String,
     val fileType: FileType,
     val fileSize: Long,
-    val file: ByteArray,
+    val file: String,
     val callbackUrl: String
 ) {
     override fun equals(other: Any?): Boolean {
@@ -40,7 +40,7 @@ data class UploadDocumentTask(
         result = 31 * result + userId.hashCode()
         result = 31 * result + fileType.hashCode()
         result = 31 * result + fileSize.hashCode()
-        result = 31 * result + file.contentHashCode()
+        result = 31 * result + file.hashCode()
         result = 31 * result + callbackUrl.hashCode()
         return result
     }

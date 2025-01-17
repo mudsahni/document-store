@@ -1,11 +1,16 @@
 package com.muditsahni.documentstore.controller
 
 import com.muditsahni.documentstore.config.FileUploadConfig
+import com.muditsahni.documentstore.exception.DocumentError
+import com.muditsahni.documentstore.exception.DocumentErrorType
 import com.muditsahni.documentstore.model.dto.request.CollectionCreationStatus
 import com.muditsahni.documentstore.model.dto.request.GetCollectionsResponse
 import com.muditsahni.documentstore.model.dto.request.NewCollectionRequest
+import com.muditsahni.documentstore.model.dto.request.UploadCallbackRequest
 import com.muditsahni.documentstore.model.entity.toCollectionStatus
 import com.muditsahni.documentstore.model.entity.toGetCollectionResponse
+import com.muditsahni.documentstore.model.enum.DocumentStatus
+import com.muditsahni.documentstore.model.enum.UploadStatus
 import com.muditsahni.documentstore.model.enum.UserRole
 import com.muditsahni.documentstore.security.FirebaseUserDetails
 import com.muditsahni.documentstore.service.CollectionsService
@@ -37,6 +42,32 @@ class CollectionsController(
         @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
     ): ResponseEntity<Map<String, String>> {
         return ResponseEntity.ok(mapOf("message" to "Hello ${firebaseUserDetails.uid}"))
+    }
+
+    @PostMapping("/upload/callback")
+    suspend fun uploadCallback(
+        @RequestBody request: UploadCallbackRequest,
+        @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
+    ): ResponseEntity<String> {
+
+        val documentError = if (request.error != null) {
+            DocumentError(request.error, DocumentErrorType.DOCUMENT_UPLOAD_ERROR)
+        } else {
+            null
+        }
+        val documentStatus = if (request.status == UploadStatus.SUCCESS) { DocumentStatus.UPLOADED } else {  DocumentStatus.ERROR }
+
+        collectionsService.updateDocumentCollectionAndUserWithUploadedDocumentStatus(
+            firebaseUserDetails.uid,
+            firebaseUserDetails.tenant,
+            request.collectionId,
+            request.uploadPath,
+            request.documentId,
+            documentStatus,
+            documentError,
+        )
+
+        return ResponseEntity.ok("")
     }
 
     @GetMapping

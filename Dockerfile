@@ -28,6 +28,9 @@ FROM eclipse-temurin:21-jre
 
 WORKDIR /app
 
+ENV ENV=prod
+ENV SPRING_PROFILES_ACTIVE=prod
+
 # Install required native libraries and dependencies
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -39,6 +42,10 @@ RUN apt-get update && \
 # Create directories for mounted secrets
 RUN mkdir -p /secrets/firebase /secrets/gcp
 
+# Set the GOOGLE_APPLICATION_CREDENTIALS environment variable
+ENV GOOGLE_APPLICATION_CREDENTIALS=/secrets/gcp/gcp.json
+ENV FIREBASE_CREDENTIALS=/secrets/firebase/firebase.json
+
 # Copy the built JAR file from the build stage
 # Assuming your JAR is built in the 'build/libs' directory
 COPY --from=build /app/build/libs/*.jar ./app.jar
@@ -47,7 +54,6 @@ COPY --from=build /app/build/libs/*.jar ./app.jar
 EXPOSE 8080
 
 # Environment variable for Spring Boot
-ENV SPRING_PROFILES_ACTIVE=prod
 ENV SERVER_PORT=8080
 
 # Command to run the application

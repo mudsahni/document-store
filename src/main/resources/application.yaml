@@ -1,15 +1,17 @@
 spring:
+  profiles:
+    active: dev  # default to dev
   application:
     name: "documentstore"
   cloud:
     gcp:
+        project-number: ${GCP_PROJECT_NUMBER:741672280176}
         project-id: ${GCP_PROJECT_ID:muditsahni-bb2eb}
         credentials:
-            location: ${GCP_CREDENTIALS_LOCATION:unknown}
-  servlet:
-    multipart:
-      max-file-size: 10MB
-      max-request-size: 50MB
+            location: ${GOOGLE_APPLICATION_CREDENTIALS:unknown}
+        firebase:
+          credentials:
+            location: ${FIREBASE_CREDENTIALS:unknown}
   security:
     filter:
       dispatcher-types: request,async
@@ -23,15 +25,17 @@ app:
 
 gcp:
   project-id: ${spring.cloud.gcp.project-id}
-  storage:
-    bucket: ""
+  service-account: ${GCP_SERVICE_ACCOUNT}
   region: ${GCP_REGION:asia-south1}  # Added region with default
   cloud-tasks:
     location: ${GCP_REGION:asia-south1}  # Required for Cloud Tasks
     queue: ${GCP_QUEUE_NAME:document-parser-queue}  # Required for Cloud Tasks
 
 document-parser:
-  uri: "https://google.com/api"
+  name: "documentparser"
+  projectNumber: ${spring.cloud.gcp.project-number}
+  region: "asia-south2"
+  uri: "api"
   version: "v1"
   upload: "upload"
 

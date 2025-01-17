@@ -56,7 +56,6 @@ dependencies {
 	implementation("org.springframework.security:spring-security-oauth2-jose")
 	implementation(platform("com.google.cloud:libraries-bom:26.52.0"))
 	// Google Cloud dependencies - no versions needed
-	implementation("com.google.cloud:google-cloud-storage")
 	implementation("com.google.cloud:google-cloud-tasks")
 	implementation("com.google.cloud:google-cloud-firestore")
 	implementation("com.google.cloud:google-cloud-secretmanager")

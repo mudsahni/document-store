@@ -45,3 +45,5 @@ secrets/
 ./dev/
 dev/
 gradle/
+
+sample/

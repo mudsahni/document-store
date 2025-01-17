@@ -17,6 +17,9 @@ import java.io.IOException
 @Configuration
 class FirebaseConfig {
 
+    @Value("\${spring.cloud.gcp.firebase.credentials.location}")
+    private lateinit var firebaseCredentialsLocation: String
+
     companion object {
         private val logger = KotlinLogging.logger {
             FirebaseConfig::class.java.name
@@ -28,14 +31,7 @@ class FirebaseConfig {
         return try {
             FirebaseApp.getInstance()
         } catch (e: IllegalStateException) {
-            val credentials = try {
-                // Try Cloud Run mounted secret first
-                GoogleCredentials.fromStream(FileInputStream("/secrets/firebase/firebase.json"))
-            } catch (e: IOException) {
-                logger.info { "Could not find secret at /secrets/firebase.json, falling back to local development path" }
-                // Local development - use file
-                GoogleCredentials.fromStream(FileInputStream("secrets/firebase-sa-key.json"))
-            }
+            val credentials = GoogleCredentials.fromStream(FileInputStream(firebaseCredentialsLocation))
 
             val options = FirebaseOptions.builder()
                 .setCredentials(credentials)
