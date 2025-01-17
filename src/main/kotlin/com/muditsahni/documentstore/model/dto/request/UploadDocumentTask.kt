@@ -6,6 +6,7 @@ data class UploadDocumentTask(
     val uploadPath: String,
     val fileName: String,
     val collectionId: String,
+    val documentId: String,
     val tenantId: String,
     val userId: String,
     val fileType: FileType,
@@ -22,6 +23,7 @@ data class UploadDocumentTask(
         if (uploadPath != other.uploadPath) return false
         if (fileName != other.fileName) return false
         if (collectionId != other.collectionId) return false
+        if (documentId != other.documentId) return false
         if (tenantId != other.tenantId) return false
         if (userId != other.userId) return false
         if (fileType != other.fileType) return false
@@ -36,6 +38,7 @@ data class UploadDocumentTask(
         var result = uploadPath.hashCode()
         result = 31 * result + fileName.hashCode()
         result = 31 * result + collectionId.hashCode()
+        result = 31 * result + documentId.hashCode()
         result = 31 * result + tenantId.hashCode()
         result = 31 * result + userId.hashCode()
         result = 31 * result + fileType.hashCode()

@@ -67,7 +67,7 @@ class CollectionsController(
             documentError,
         )
 
-        return ResponseEntity.ok("")
+        return ResponseEntity.ok("Completed")
     }
 
     @GetMapping

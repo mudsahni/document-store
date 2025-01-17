@@ -120,6 +120,7 @@ class CollectionsService(
         tenantId: String,
         userId: String,
         collectionId: String,
+        documentId: String,
         document: FilePart
     ) {
 
@@ -142,6 +143,7 @@ class CollectionsService(
             // create task for queue
             val task = UploadDocumentTask(
                 collectionId = collectionId,
+                documentId = documentId,
                 tenantId = tenantId,
                 userId = userId,
                 fileType = FileType.PDF,
@@ -199,12 +201,12 @@ class CollectionsService(
 
         // create document objects and save them to firestore
         // link them to collection and user too
-        createAndSaveDocumentsForUpload(userId, tenant, collection.id, documents)
+        val documentIds = createAndSaveDocumentsForUpload(userId, tenant, collection.id, documents)
         // create upload document tasks
         val uploadPaths = mutableListOf<String>()
-        documents.forEach { document ->
+        documents.forEachIndexed { index, document ->
             logger.info("Uploading document ${document.filename()}")
-            createUploadDocumentTask(tenant.tenantId, userId, collection.id, document)
+            createUploadDocumentTask(tenant.tenantId, userId, collection.id, documentIds[index], document)
             uploadPaths.add("${tenant.tenantId}/${collection.id}/${document.filename()}")
         }
 
@@ -279,10 +281,12 @@ class CollectionsService(
         tenant: Tenant,
         collectionId: String,
         documents: List<FilePart>
-    ) {
+    ): List<String> {
+
         val documentIds = mutableMapOf<String, DocumentStatus>()
 
         documents.forEach {
+
             // create document object
             val document = DocumentHelper.createDocumentObject(
                 userId = userId,
@@ -315,6 +319,9 @@ class CollectionsService(
             tenant,
             documentIds.keys.toList()
         )
+
+        return documentIds.keys.toList()
+
     }
 
 
