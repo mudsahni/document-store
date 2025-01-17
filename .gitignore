@@ -47,3 +47,5 @@ dev/
 gradle/
 
 sample/
+
+env.local
