@@ -2,6 +2,7 @@ package com.muditsahni.documentstore.util
 
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.Firestore
+import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundException
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.toCollection
@@ -29,6 +30,10 @@ object CollectionHelper {
             .document(collectionId)
             .get()
             .await()
+
+        if (!collectionRef.exists()) {
+            throw CollectionNotFoundException("Collection with id $collectionId not found")
+        }
 
         logger.info("Collection fetched from Firestore")
         val collection = collectionRef.toCollection()
@@ -80,8 +85,14 @@ object CollectionHelper {
 
         val collection = getCollection(firestore, collectionId, tenant)
 
-        if (collection.status == CollectionStatus.RECIEVED) {
+        if (collection.status == CollectionStatus.RECEIVED) {
             collection.status = CollectionStatus.IN_PROGRESS
+        }
+
+        if (collection.status == CollectionStatus.DOCUMENT_UPLOADING_TASKS_CREATED) {
+            if (collection.documents.all { it.value == DocumentStatus.UPLOADED }) {
+                collection.status = CollectionStatus.DOCUMENTS_UPLOAD_COMPLETE
+            }
         }
 
         collection.documents[documentId] = documentStatus
@@ -94,4 +105,21 @@ object CollectionHelper {
     }
 
 
+    suspend fun updateCollectionStatus(
+        firestore: Firestore,
+        tenant: Tenant,
+        collectionId: String,
+        status: CollectionStatus
+    ) {
+
+        val collection = getCollection(firestore, collectionId, tenant)
+
+        collection.status = status
+        collection.updatedAt = Timestamp.now()
+        collection.updatedBy = collection.createdBy
+
+        logger.info("Collection object updated with new status: $status")
+        // update collection in firestore
+        saveCollection(firestore, tenant, collection)
+    }
 }

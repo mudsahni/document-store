@@ -20,10 +20,10 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
 import org.springframework.http.ResponseEntity
+import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 
 
 @RestController
@@ -38,14 +38,6 @@ class CollectionsController(
         private val logger = KotlinLogging.logger {
             CollectionsController::class.java.name
         }
-    }
-
-    @GetMapping("/hello")
-    fun helloWorld(
-        @PathVariable tenantId: String,
-        @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
-    ): ResponseEntity<Map<String, String>> {
-        return ResponseEntity.ok(mapOf("message" to "Hello ${firebaseUserDetails.uid}"))
     }
 
     @PostMapping("/{collectionId}/upload")
@@ -125,6 +117,7 @@ class CollectionsController(
 
         logger.info { "Create collection call received" }
 
+        request.files.forEach { it -> validateFile(it) }
         // Create collection
         val collection = collectionsService.createCollection(
             firebaseUserDetails.uid,
@@ -136,16 +129,16 @@ class CollectionsController(
         return ResponseEntity.ok(collection.toCollectionStatus())
     }
 
-    private fun validateFile(file: MultipartFile) {
+    private fun validateFile(file: FilePart) {
         // Check content type
-        require(file.contentType in FileUploadConfig.ALLOWED_CONTENT_TYPES) {
-            "File ${file.originalFilename} must be a PDF"
+        require(file.headers().contentType.toString() in FileUploadConfig.ALLOWED_CONTENT_TYPES) {
+            "File ${file.filename()} must be a PDF"
         }
 
         // Check file size
-        require(file.size <= FileUploadConfig.MAX_FILE_SIZE) {
-            "File ${file.originalFilename} exceeds maximum size of ${FileUploadConfig.MAX_FILE_SIZE / 1024 / 1024}MB"
-        }
+//        require(file. <= FileUploadConfig.MAX_FILE_SIZE) {
+//            "File ${file.originalFilename} exceeds maximum size of ${FileUploadConfig.MAX_FILE_SIZE / 1024 / 1024}MB"
+//        }
     }
 
 

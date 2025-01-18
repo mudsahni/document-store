@@ -1,5 +1,6 @@
 package com.muditsahni.documentstore.exception
 
+import com.muditsahni.documentstore.exception.throwable.ResourceNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -11,6 +12,7 @@ import java.time.LocalDateTime
 class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException::class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
     fun handleIllegalState(e: IllegalStateException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.FORBIDDEN)
@@ -22,6 +24,7 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(IllegalArgumentException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleIllegalArgument(e: IllegalArgumentException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
@@ -33,6 +36,7 @@ class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(Exception::class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun handleGeneral(e: Exception): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -43,14 +47,14 @@ class GlobalExceptionHandler {
             ))
     }
 
-    @ExceptionHandler(DocumentNotFoundException::class)
+    @ExceptionHandler(ResourceNotFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    fun handleDocumentNotFoundException(ex: DocumentNotFoundException): ResponseEntity<ErrorResponse> {
+    fun handleDocumentNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(ErrorResponse(
                 status = HttpStatus.NOT_FOUND.value(),
-                message = ex.message ?: "Document not found",
+                message = ex.message ?: "Resource not found",
                 timestamp = LocalDateTime.now()
             ))
     }

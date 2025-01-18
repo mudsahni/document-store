@@ -1,7 +1,7 @@
 package com.muditsahni.documentstore.util
 
 import com.google.cloud.firestore.Firestore
-import com.muditsahni.documentstore.exception.DocumentNotFoundException
+import com.muditsahni.documentstore.exception.throwable.DocumentNotFoundException
 import com.muditsahni.documentstore.model.entity.Document
 import com.muditsahni.documentstore.model.entity.toDocument
 import com.muditsahni.documentstore.model.enum.DocumentRole

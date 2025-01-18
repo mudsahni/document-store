@@ -6,10 +6,12 @@ import com.google.cloud.firestore.Firestore
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.muditsahni.documentstore.config.documentparser.DocumentParserProperties
 import com.muditsahni.documentstore.config.getObjectMapper
+import com.muditsahni.documentstore.exception.CollectionError
+import com.muditsahni.documentstore.exception.CollectionErrorType
 import com.muditsahni.documentstore.exception.DocumentError
+import com.muditsahni.documentstore.exception.throwable.CollectionUploadException
 import com.muditsahni.documentstore.model.dto.request.UploadDocumentTask
 import com.muditsahni.documentstore.model.entity.Collection
-import com.muditsahni.documentstore.model.entity.Document
 import com.muditsahni.documentstore.model.enum.*
 import com.muditsahni.documentstore.util.CloudTasksHelper
 import com.muditsahni.documentstore.util.CollectionHelper
@@ -101,7 +103,7 @@ class CollectionsService(
             name = collectionName,
             type = collectionType,
             createdBy = userId,
-            status = CollectionStatus.RECIEVED,
+            status = CollectionStatus.RECEIVED,
             createdAt = Timestamp.now(),
         )
 
@@ -132,68 +134,64 @@ class CollectionsService(
 
         logger.info("Uploading document ${document.filename()} for user $userId")
 
-        try {
+        val fileContent = document.content()
+            .collectList()
+            .awaitSingle()
+            .fold(ByteArrayOutputStream()) { baos, dataBuffer ->
+                baos.write(dataBuffer.asInputStream().readBytes())
+                baos
+            }
+            .toByteArray()
 
-            val fileContent = document.content()
-                .collectList()
-                .awaitSingle()
-                .fold(ByteArrayOutputStream()) { baos, dataBuffer ->
-                    baos.write(dataBuffer.asInputStream().readBytes())
-                    baos
-                }
-                .toByteArray()
+        // Encode file content to Base64
+        val fileContentBase64 = Base64.getEncoder().encodeToString(fileContent)
 
-            // Encode file content to Base64
-            val fileContentBase64 = Base64.getEncoder().encodeToString(fileContent)
+        // create task for queue
+        val task = UploadDocumentTask(
+            collectionId = collectionId,
+            documentId = documentId,
+            tenantId = tenantId,
+            userId = userId,
+            fileType = FileType.PDF,
+            fileSize = fileContent.size.toLong(),
+            file = fileContentBase64,     // Send Base64 encoded string
+            fileName = document.filename(),
+            uploadPath = "${tenantId}/${collectionId}",
+            callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/tenants/${tenantId}/collections/${collectionId}/upload"
+        )
 
-            // create task for queue
-            val task = UploadDocumentTask(
-                collectionId = collectionId,
-                documentId = documentId,
-                tenantId = tenantId,
-                userId = userId,
-                fileType = FileType.PDF,
-                fileSize = fileContent.size.toLong(),
-                file = fileContentBase64,     // Send Base64 encoded string
-                fileName = document.filename(),
-                uploadPath = "${tenantId}/${collectionId}",
-                callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/tenants/${tenantId}/collections/${collectionId}/upload/callback"
-            )
+        val taskBody = objectMapper.writeValueAsString(task)
 
-            val taskBody = objectMapper.writeValueAsString(task)
+        logger.info("Task body created")
 
-            logger.info("Task body created")
+        googleCredentials.refreshIfExpired()
 
-            // Get auth token
-//            val idTokenCredentials = IdTokenCredentials.newBuilder()
-//                .setIdTokenProvider(credentials as IdTokenProvider)
-//                .setTargetAudience("muditsahni-bb2eb")  // Your Firebase project ID
-//                .build()
-//            idTokenCredentials.refresh()
-//            val idToken = idTokenCredentials.idToken.tokenValue
+        logger.info("Token fetched")
 
-            googleCredentials.refreshIfExpired()
+        val documentParserUploadEndpoint = "https://${documentParserProperties.name}-${documentParserProperties.projectNumber}.${documentParserProperties.region}.run.app/${documentParserProperties.uri}/${documentParserProperties.version}/" +
+                documentParserProperties.upload
 
-            logger.info("Token fetched")
+        logger.info("Document parser upload endpoint fetched: $documentParserUploadEndpoint")
 
-            val documentParserUploadEndpoint = "https://${documentParserProperties.name}-${documentParserProperties.projectNumber}.${documentParserProperties.region}.run.app/${documentParserProperties.uri}/${documentParserProperties.version}/" +
-                    documentParserProperties.upload
+        CloudTasksHelper.createNewTask(
+            cloudTasksClient,
+            gcpProjectId,
+            gcpRegion,
+            cloudTasksQueue,
+            documentParserUploadEndpoint,
+            taskBody
+        )
 
-            logger.info("Document parser upload endpoint fetched: $documentParserUploadEndpoint")
+        logger.info("Task created successfully")
 
-            CloudTasksHelper.createNewTask(
-                cloudTasksClient,
-                gcpProjectId,
-                gcpRegion,
-                cloudTasksQueue,
-                documentParserUploadEndpoint,
-                taskBody
-            )
+        // update collection status
+        CollectionHelper.updateCollectionStatus(
+            firestore,
+            Tenant.fromTenantId(tenantId),
+            collectionId,
+            CollectionStatus.DOCUMENT_UPLOADING_TASKS_CREATED
+        )
 
-        } catch (e: Exception) {
-            logger.error { "Error uploading document to document parser due to error: ${e.cause} ${e.message}" }
-            throw e
-        }
     }
 
     private suspend fun createUploadDocumentTasks(
@@ -203,7 +201,7 @@ class CollectionsService(
         documents: List<FilePart>
     ): List<String> {
 
-        logger.info("Uploading documents for user $userId")
+        logger.info("Creating uploading tasks for user $userId")
 
         // create document objects and save them to firestore
         // link them to collection and user too
@@ -211,7 +209,7 @@ class CollectionsService(
         // create upload document tasks
         val uploadPaths = mutableListOf<String>()
         documents.forEachIndexed { index, document ->
-            logger.info("Uploading document ${document.filename()}")
+            logger.info("Creating document upload task for ${document.filename()}")
             createUploadDocumentTask(tenant.tenantId, userId, collection.id, documentIds[index], document)
             uploadPaths.add("${tenant.tenantId}/${collection.id}/${document.filename()}")
         }
@@ -235,10 +233,22 @@ class CollectionsService(
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 createUploadDocumentTasks(tenant, userId, collection, documents)
-                logger.info("Documents uploaded successfully")
+                logger.info("Document upload tasks created successfully")
             } catch (e: Exception) {
                 logger.error("Failed to upload documents: ${e.message}", e)
                 // Handle error - maybe update collection status
+                // update collection to failed
+                collection.status = CollectionStatus.FAILED
+                collection.error = CollectionError(
+                    "Failed to create tasks for uploading documents",
+                    CollectionErrorType.DOCUMENT_UPLOAD_TASK_CREATION_ERROR
+                )
+                collection.updatedBy = userId
+                collection.updatedAt = Timestamp.now()
+                CollectionHelper.saveCollection(firestore, tenant, collection)
+                logger.info("Collection updated with error")
+                // throw collection upload exception
+                throw CollectionUploadException("Failed to upload documents")
             }
         }
 
