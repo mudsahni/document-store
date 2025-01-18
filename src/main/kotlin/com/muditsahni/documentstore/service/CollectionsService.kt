@@ -154,7 +154,7 @@ class CollectionsService(
                 file = fileContentBase64,     // Send Base64 encoded string
                 fileName = document.filename(),
                 uploadPath = "${tenantId}/${collectionId}",
-                callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/collections/upload/callback"
+                callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/tenants/${tenantId}/collections/${collectionId}/upload/callback"
             )
 
             val taskBody = objectMapper.writeValueAsString(task)

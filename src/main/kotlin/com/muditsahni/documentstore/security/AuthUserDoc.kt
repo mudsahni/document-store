@@ -9,8 +9,7 @@ data class AuthUserDoc(
     val id: String,
     val role: UserRole,
 
-    @JsonProperty("tenant_id")
-    val tenantId: Tenant
+    val tenant: Tenant
 ) {
     constructor(): this("", UserRole.UNAUTHORIZED, Tenant.PERFECT_ACCOUNTING_AND_SHARED_SERVICES)
 
@@ -20,6 +19,6 @@ fun DocumentSnapshot.toAuthUserDoc(): AuthUserDoc {
     return AuthUserDoc(
         id = id,
         role = UserRole.fromValue(getString("role") ?: UserRole.UNAUTHORIZED.value),
-        tenantId = Tenant.fromTenantId(getString("tenant_id") ?: Tenant.INVALID_TENANT.tenantId)
+        tenant = Tenant.fromTenantId(getString("tenant_id") ?: Tenant.INVALID_TENANT.tenantId)
     )
 }

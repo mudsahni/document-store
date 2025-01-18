@@ -5,6 +5,7 @@ import com.google.cloud.firestore.Firestore
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.toCollection
+import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.DocumentStatus
 
 import mu.KotlinLogging
@@ -78,6 +79,10 @@ object CollectionHelper {
     ) {
 
         val collection = getCollection(firestore, collectionId, tenant)
+
+        if (collection.status == CollectionStatus.RECIEVED) {
+            collection.status = CollectionStatus.IN_PROGRESS
+        }
 
         collection.documents[documentId] = documentStatus
         collection.updatedAt = Timestamp.now()

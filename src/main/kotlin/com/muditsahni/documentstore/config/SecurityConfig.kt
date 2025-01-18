@@ -48,7 +48,7 @@ class SecurityConfig(
     fun callbackSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
        return http
             // Split into two security filter chains
-            .securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/v1/collections/upload/callback")) // Only for callback endpoints
+            .securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/v1/tenants/*/collections/*/upload/callback")) // Only for callback endpoints
             .authorizeExchange { auth ->
                 //auth.pathMatchers("/api/v1/upload/callback").permitAll()  // Temporarily permit all to debug
 //                auth.pathMatchers("/api/v1/upload/callback")
@@ -78,7 +78,7 @@ class SecurityConfig(
     @Order(2) // Lower priority for general API endpoints
     fun apiSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
         val apiPattern = PathPatternParserServerWebExchangeMatcher("/api/**")
-        val callbackPattern = PathPatternParserServerWebExchangeMatcher("/api/v1/collections/upload/callback")
+        val callbackPattern = PathPatternParserServerWebExchangeMatcher("/api/v1/tenants/*/collections/*/upload/callback")
 
         http
             .securityMatcher(AndServerWebExchangeMatcher(
@@ -87,7 +87,7 @@ class SecurityConfig(
             ))
             .authorizeExchange { auth ->
                 auth
-                    .pathMatchers("/api/v1/collections/upload/callback").permitAll()
+                    .pathMatchers("/api/v1/tenants/*/collections/*/upload/callback").permitAll()
                     .pathMatchers("/health").permitAll()
                     .pathMatchers("/dev/token").permitAll()
                     .pathMatchers("/swagger-ui/**", "/api-docs/**").permitAll()

@@ -25,8 +25,9 @@ import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
+
 @RestController
-@RequestMapping("/api/v1/collections")
+@RequestMapping("/api/v1/tenants/{tenantId}/collections")
 @Tag(name = "Document Upload", description = "Endpoints for document upload and processing")
 @SecurityRequirement(name = "firebase")
 class CollectionsController(
@@ -41,18 +42,21 @@ class CollectionsController(
 
     @GetMapping("/hello")
     fun helloWorld(
+        @PathVariable tenantId: String,
         @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
     ): ResponseEntity<Map<String, String>> {
         return ResponseEntity.ok(mapOf("message" to "Hello ${firebaseUserDetails.uid}"))
     }
 
-    @PostMapping("/upload/callback")
+    @PostMapping("/{collectionId}/upload")
     suspend fun uploadCallback(
+        @PathVariable tenantId: String,
+        @PathVariable collectionId: String,
         @RequestBody request: UploadCallbackRequest,
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
 
-        logger.info("Upload callback received for document ${request.documentId}")
+        logger.info("Upload callback received for collection $collectionId and document ${request.documentId}")
         val documentError = if (request.error != null) {
             DocumentError(request.error, DocumentErrorType.DOCUMENT_UPLOAD_ERROR)
         } else {
@@ -62,19 +66,20 @@ class CollectionsController(
 
         collectionsService.updateDocumentCollectionAndUserWithUploadedDocumentStatus(
             request.userId,
-            Tenant.fromTenantId(request.tenantId),
-            request.collectionId,
+            Tenant.fromTenantId(tenantId),
+            collectionId,
             request.uploadPath,
             request.documentId,
             documentStatus,
             documentError,
         )
 
-        return ResponseEntity.ok("Completed")
+        return ResponseEntity.ok("Upload callback completed.")
     }
 
     @GetMapping
     suspend fun getAll(
+        @PathVariable tenantId: String,
         @RequestParam(required = false, defaultValue = "false")
         @Parameter(description = "If true, returns all collections (requires power-user or admin permission)")
         orgWide: Boolean,
@@ -113,6 +118,7 @@ class CollectionsController(
 
     @PostMapping
     suspend fun create(
+        @PathVariable tenantId: String,
         @ModelAttribute request: NewCollectionRequest,
         @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
     ): ResponseEntity<CollectionCreationStatus> {

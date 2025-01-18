@@ -31,13 +31,24 @@ class FirebaseAuthenticationFilter(
 
 
         this.setServerAuthenticationConverter { exchange ->
-            if (exchange.request.uri.path.startsWith("/api/v1/collections/upload/callback")) {
+            if (exchange.request.uri.path.startsWith("/api/v1/tenants/*/collections/*/upload/callback")) {
                 logger.debug("Skipping authentication for callback endpoint")
                 return@setServerAuthenticationConverter Mono.empty()
             }
 
             Mono.defer {
                 val authHeader = exchange.request.headers["Authorization"]?.firstOrNull()
+                val pathElements = exchange.request.path.elements().toList()
+                val tenantId = pathElements
+                    .indexOfFirst { it.value() == "tenants" }
+                    .let { index ->
+                        if (index >= 0 && index < pathElements.size - 2) {
+                            pathElements[index + 2].value()
+                        } else {
+                            null
+                        }
+                    }
+
                 logger.debug("Auth header: ${authHeader?.take(20)}...")
 
                 if (authHeader?.startsWith("Bearer ") == true) {
@@ -71,10 +82,16 @@ class FirebaseAuthenticationFilter(
                                         val authUserDoc = userDoc.toAuthUserDoc()
                                         val authorities = extractAuthoritiesFromFirestore(authUserDoc.role)
 
+                                        if (authUserDoc.tenant.tenantId != tenantId) {
+                                            logger.info("User tenant: ${authUserDoc.tenant.tenantId}, Requested tenant: $tenantId")
+                                            logger.warn("Tenant mismatch for user: ${decodedToken.uid}")
+                                            return@flatMap Mono.empty()
+                                        }
+
                                         Mono.just(
                                             FirebaseAuthenticationToken(
                                                 authUserDoc.id,
-                                                authUserDoc.tenantId,
+                                                authUserDoc.tenant,
                                                 authUserDoc.role,
                                                 token,
                                                 decodedToken.claims,
@@ -99,80 +116,6 @@ class FirebaseAuthenticationFilter(
     }
 
 
-//    override fun doFilterInternal(
-//        request: HttpServletRequest,
-//        response: HttpServletResponse,
-//        filterChain: FilterChain
-//    ) {
-//        val authHeader = request.getHeader("Authorization")
-//        logger.debug("Auth header: ${authHeader?.take(20)}...")
-//        if (authHeader?.startsWith("Bearer ") == true) {
-//            val token = authHeader.substring(7)
-//            try {
-//                // Verify the token using Firebase Admin SDK
-//                logger.debug("Attempting to verify token")
-//                val decodedToken = FirebaseAuth.getInstance(firebaseApp)
-//                    .verifyIdToken(token)
-//                logger.debug("Token verified for user: ${decodedToken.uid}")
-//
-//                val authUserDoc = getUserDoc(decodedToken)
-//
-//                if (authUserDoc == null) {
-//                    logger.error("User document not found in Firestore for UID: ${decodedToken.uid}")
-//                    SecurityContextHolder.clearContext()
-//                    return
-//                }
-//
-//                // **Assigning authorities based on token claims or default**
-//                val authorities = extractAuthoritiesFromFirestore(authUserDoc.role)
-//
-//                // Create authentication object with user details
-//                val auth = FirebaseAuthenticationToken(
-//                    decodedToken.uid,
-//                    authUserDoc.tenantId,
-//                    authUserDoc.role,
-//                    token,
-//                    decodedToken.claims,
-//                    authorities
-//                )
-//                SecurityContextHolder.getContext().authentication = auth
-//                logger.debug("Authentication set in SecurityContext")
-//            } catch (e: Exception) {
-//                // Token validation failed
-//                logger.error("Token validation failed", e)
-//                SecurityContextHolder.clearContext()
-//            }
-//        }
-//        filterChain.doFilter(request, response)
-//    }
-//
-//    private fun getUserDoc(decodedToken: FirebaseToken): AuthUserDoc? {
-//        val db = firestore
-//
-//        try {
-//            // Fetch user document from Firestore
-//            val userDoc = db.collection("users").document(decodedToken.uid)
-//                .get()
-//                .get() // Get() is called twice because the first returns ApiFuture
-//
-//            if (!userDoc.exists()) {
-//                logger.warn("User document not found in Firestore for UID: ${decodedToken.uid}")
-//                throw IllegalStateException("User document not found in Firestore for UID: ${decodedToken.uid}")
-//            }
-//
-//            try {
-//                return userDoc.toAuthUserDoc()
-//            } catch (e: Exception) {
-//                logger.error("Error converting user document to User object", e)
-//                throw IllegalStateException("Error converting user document to User object")
-//            }
-//
-//        } catch (e: Exception) {
-//            logger.error("Error fetching user roles from Firestore", e)
-//            throw IllegalStateException("Error fetching user roles from Firestore")
-//        }
-//    }
-//
     private fun extractAuthoritiesFromFirestore(role: UserRole): Collection<SimpleGrantedAuthority> {
         return try {
             listOf(SimpleGrantedAuthority("ROLE_" + role.value.uppercase()))
