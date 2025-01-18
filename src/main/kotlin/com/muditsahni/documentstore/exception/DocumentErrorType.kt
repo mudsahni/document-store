@@ -7,4 +7,5 @@ enum class DocumentErrorType(val value: String) {
     DOCUMENT_PARSING_ERROR("document_parsing_error"),
     DOCUMENT_SIZE_ERROR("document_size_error"),
 
+
 }

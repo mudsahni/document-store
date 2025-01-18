@@ -16,6 +16,9 @@ import com.muditsahni.documentstore.util.CollectionHelper
 import com.muditsahni.documentstore.util.DocumentHelper
 import com.muditsahni.documentstore.util.UserHelper
 import com.muditsahni.documentstore.util.await
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitSingle
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
@@ -228,10 +231,16 @@ class CollectionsService(
         // Create collection
         val collection = initiateCollectionCreation(userId, tenant, collectionName, collectionType)
 
-        // upload documents
-        val documentPaths = createUploadDocumentTasks(tenant, userId, collection, documents)
-
-        logger.info("Documents uploaded successfully")
+        // Launch the document upload in a new coroutine
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                createUploadDocumentTasks(tenant, userId, collection, documents)
+                logger.info("Documents uploaded successfully")
+            } catch (e: Exception) {
+                logger.error("Failed to upload documents: ${e.message}", e)
+                // Handle error - maybe update collection status
+            }
+        }
 
         // Return collection
         return collection

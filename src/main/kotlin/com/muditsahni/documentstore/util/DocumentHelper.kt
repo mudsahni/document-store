@@ -1,6 +1,7 @@
 package com.muditsahni.documentstore.util
 
 import com.google.cloud.firestore.Firestore
+import com.muditsahni.documentstore.exception.DocumentNotFoundException
 import com.muditsahni.documentstore.model.entity.Document
 import com.muditsahni.documentstore.model.entity.toDocument
 import com.muditsahni.documentstore.model.enum.DocumentRole
@@ -22,22 +23,23 @@ object DocumentHelper {
         tenant: Tenant
     ): Document {
 
-        val documentRef = firestore
-            .collection("tenants")
-            .document(tenant.tenantId)
-            .collection("documents")
-            .document(documentId)
-            .get()
-            .await()
+            val documentRef = firestore
+                .collection("tenants")
+                .document(tenant.tenantId)
+                .collection("documents")
+                .document(documentId)
+                .get()
+                .await()
 
-        if (!documentRef.exists()) {
-            throw IllegalStateException("Document with id $documentId not found")
-        }
+            if (!documentRef.exists()) {
+                throw DocumentNotFoundException("Document with id $documentId not found")
+            }
 
-        logger.info("Document fetched from Firestore")
-        val document = documentRef.toDocument()
-        logger.info("Document object fetched and converted to document class")
-        return document
+            logger.info("Document fetched from Firestore")
+            val document = documentRef.toDocument()
+            logger.info("Document object fetched and converted to document class")
+            return document
+
     }
 
     suspend fun saveDocument(

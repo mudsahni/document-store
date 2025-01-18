@@ -31,10 +31,18 @@ class FirebaseAuthenticationFilter(
 
 
         this.setServerAuthenticationConverter { exchange ->
-            if (exchange.request.uri.path.startsWith("/api/v1/tenants/*/collections/*/upload/callback")) {
+            val requestPath = exchange.request.uri.path
+            val regex = Regex("/api/v1/tenants/[^/]+/collections/[^/]+/upload")
+
+            if (regex.matches(requestPath)) {
                 logger.debug("Skipping authentication for callback endpoint")
                 return@setServerAuthenticationConverter Mono.empty()
             }
+
+//            if (exchange.request.uri.path.startsWith("/api/v1/tenants/*/collections/*/upload/callback")) {
+//                logger.debug("Skipping authentication for callback endpoint")
+//                return@setServerAuthenticationConverter Mono.empty()
+//            }
 
             Mono.defer {
                 val authHeader = exchange.request.headers["Authorization"]?.firstOrNull()
