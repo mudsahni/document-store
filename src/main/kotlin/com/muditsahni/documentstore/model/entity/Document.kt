@@ -19,9 +19,9 @@ data class Document(
     var error: DocumentError? = null,
     var permissions: MutableMap<String, DocumentRole> = mutableMapOf(),
     val createdBy: String,
-    val createdDate: Long,
+    val createdAt: Long,
     var updatedBy: String? = null,
-    var updatedDate: Long? = null
+    var updatedAt: Long? = null
 )
 
 data class ClientDetails(
@@ -55,8 +55,8 @@ fun DocumentSnapshot.toDocument(): Document {
         // TODO: Find a good way to do this
         permissions = get("permissions") as MutableMap<String, DocumentRole>,
         createdBy = getString("createdBy") ?: throw IllegalStateException("Document createdBy not found"),
-        createdDate = getLong("createdAt") ?: throw IllegalStateException("Document createdAt not found"),
+        createdAt = getLong("createdAt") ?: throw IllegalStateException("Document createdAt not found"),
         updatedBy = getString("updatedBy"),
-        updatedDate = getLong("updatedAt")
+        updatedAt = getLong("updatedAt")
     )
 }

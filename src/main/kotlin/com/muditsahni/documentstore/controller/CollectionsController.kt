@@ -52,6 +52,7 @@ class CollectionsController(
         @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
 
+        logger.info("Upload callback received for document ${request.documentId}")
         val documentError = if (request.error != null) {
             DocumentError(request.error, DocumentErrorType.DOCUMENT_UPLOAD_ERROR)
         } else {

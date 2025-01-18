@@ -30,6 +30,10 @@ object DocumentHelper {
             .get()
             .await()
 
+        if (!documentRef.exists()) {
+            throw IllegalStateException("Document with id $documentId not found")
+        }
+
         logger.info("Document fetched from Firestore")
         val document = documentRef.toDocument()
         logger.info("Document object fetched and converted to document class")
@@ -74,7 +78,7 @@ object DocumentHelper {
             parsedData = null,
             private = false,
             createdBy = tenant.tenantId,
-            createdDate = System.currentTimeMillis(),
+            createdAt = System.currentTimeMillis(),
             permissions = mutableMapOf(
                 userId to DocumentRole.OWNER
             )

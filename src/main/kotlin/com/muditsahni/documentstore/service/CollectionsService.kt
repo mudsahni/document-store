@@ -9,6 +9,7 @@ import com.muditsahni.documentstore.config.getObjectMapper
 import com.muditsahni.documentstore.exception.DocumentError
 import com.muditsahni.documentstore.model.dto.request.UploadDocumentTask
 import com.muditsahni.documentstore.model.entity.Collection
+import com.muditsahni.documentstore.model.entity.Document
 import com.muditsahni.documentstore.model.enum.*
 import com.muditsahni.documentstore.util.CloudTasksHelper
 import com.muditsahni.documentstore.util.CollectionHelper
@@ -153,7 +154,7 @@ class CollectionsService(
                 file = fileContentBase64,     // Send Base64 encoded string
                 fileName = document.filename(),
                 uploadPath = "${tenantId}/${collectionId}",
-                callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/upload/callback"
+                callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/collections/upload/callback"
             )
 
             val taskBody = objectMapper.writeValueAsString(task)
@@ -248,6 +249,7 @@ class CollectionsService(
         logger.info("Updating collection with uploaded document for user $userId")
 
         // update document
+
         val document = DocumentHelper.getDocument(firestore, documentId, tenant)
         document.status = status
         document.path = documentFilePath

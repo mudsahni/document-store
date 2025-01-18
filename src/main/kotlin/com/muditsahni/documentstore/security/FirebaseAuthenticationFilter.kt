@@ -28,7 +28,14 @@ class FirebaseAuthenticationFilter(
     }
 
     init {
+
+
         this.setServerAuthenticationConverter { exchange ->
+            if (exchange.request.uri.path.startsWith("/api/v1/collections/upload/callback")) {
+                logger.debug("Skipping authentication for callback endpoint")
+                return@setServerAuthenticationConverter Mono.empty()
+            }
+
             Mono.defer {
                 val authHeader = exchange.request.headers["Authorization"]?.firstOrNull()
                 logger.debug("Auth header: ${authHeader?.take(20)}...")
