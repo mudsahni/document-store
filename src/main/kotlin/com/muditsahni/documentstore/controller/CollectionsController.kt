@@ -10,6 +10,7 @@ import com.muditsahni.documentstore.model.dto.request.UploadCallbackRequest
 import com.muditsahni.documentstore.model.entity.toCollectionStatus
 import com.muditsahni.documentstore.model.entity.toGetCollectionResponse
 import com.muditsahni.documentstore.model.enum.DocumentStatus
+import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.enum.UploadStatus
 import com.muditsahni.documentstore.model.enum.UserRole
 import com.muditsahni.documentstore.security.FirebaseUserDetails
@@ -20,6 +21,7 @@ import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
@@ -47,7 +49,7 @@ class CollectionsController(
     @PostMapping("/upload/callback")
     suspend fun uploadCallback(
         @RequestBody request: UploadCallbackRequest,
-        @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
+        @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
 
         val documentError = if (request.error != null) {
@@ -58,8 +60,8 @@ class CollectionsController(
         val documentStatus = if (request.status == UploadStatus.SUCCESS) { DocumentStatus.UPLOADED } else {  DocumentStatus.ERROR }
 
         collectionsService.updateDocumentCollectionAndUserWithUploadedDocumentStatus(
-            firebaseUserDetails.uid,
-            firebaseUserDetails.tenant,
+            request.userId,
+            Tenant.fromTenantId(request.tenantId),
             request.collectionId,
             request.uploadPath,
             request.documentId,

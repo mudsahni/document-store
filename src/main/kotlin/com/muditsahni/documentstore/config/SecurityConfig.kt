@@ -38,7 +38,7 @@ class SecurityConfig(
     @Bean
     @Order(1) // Higher priority for specific matcher
     fun callbackSecurityFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
-        http
+       return http
             // Split into two security filter chains
             .securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/v1/collections/*/callback")) // Only for callback endpoints
             .authorizeExchange { auth ->
@@ -52,8 +52,7 @@ class SecurityConfig(
                 }
             }
             .csrf { it.disable() }
-
-        return http.build()
+           .build()
     }
 
     @Bean

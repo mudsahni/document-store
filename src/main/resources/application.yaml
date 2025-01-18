@@ -9,10 +9,10 @@ spring:
         project-number: ${GCP_PROJECT_NUMBER:741672280176}
         project-id: ${GCP_PROJECT_ID:muditsahni-bb2eb}
         credentials:
-            location: ${GOOGLE_APPLICATION_CREDENTIALS:unknown}
+            location: ${GOOGLE_APPLICATION_CREDENTIALS:./src/main/resources/secrets/gcp-sa-key.json}
         firebase:
           credentials:
-            location: ${FIREBASE_CREDENTIALS:unknown}
+            location: ${FIREBASE_CREDENTIALS:./src/main/resources/secrets/firebase-sa-key.json}
   security:
     filter:
       dispatcher-types: request,async

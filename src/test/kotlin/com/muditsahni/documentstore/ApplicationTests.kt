@@ -16,9 +16,6 @@ class ApplicationTests {
 	lateinit var cloudTasksClient: CloudTasksClient
 
 	@MockitoBean
-	lateinit var storage: Storage
-
-	@MockitoBean
 	lateinit var firebaseApp: FirebaseApp
 
 	@MockitoBean
