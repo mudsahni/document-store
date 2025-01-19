@@ -1,4 +1,4 @@
-package com.muditsahni.documentstore.model.dto.request
+package com.muditsahni.documentstore.model.dto.response
 
 import com.google.cloud.Timestamp
 import com.muditsahni.documentstore.model.enum.CollectionType

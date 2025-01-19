@@ -25,12 +25,18 @@ app:
       - application/pdf
 
 gcp:
+  bucket:
+    name: "ms_document_store_one"
   project-id: ${spring.cloud.gcp.project-id}
   service-account: ${GCP_SERVICE_ACCOUNT}
   region: ${GCP_REGION:asia-south1}  # Added region with default
   cloud-tasks:
     location: ${CLOUDTASKS_REGION:asia-south1}  # Required for Cloud Tasks
     queue: ${GCP_QUEUE_NAME:document-parser-queue}  # Required for Cloud Tasks
+  pubsub:
+    uploads:
+        topic: ${GCP_PUBSUB_TOPIC:document-uploads}  # Required for Pub/Sub
+        subscription: ${GCP_PUBSUB_SUBSCRIPTION:document-uploads-sub}  # Required for Pub/Sub
 
 document-parser:
   name: "documentparser"

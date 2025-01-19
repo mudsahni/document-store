@@ -19,6 +19,10 @@ data class User(
     var updatedBy: String? = null
 )
 
+
+val SYSTEM_USER = "SYSTEM"
+
+
 fun DocumentSnapshot.toUser(): User {
     return User(
         id = id,

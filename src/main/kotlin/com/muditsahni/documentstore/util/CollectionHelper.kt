@@ -5,6 +5,7 @@ import com.google.cloud.firestore.Firestore
 import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundException
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
+import com.muditsahni.documentstore.model.entity.SYSTEM_USER
 import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.DocumentStatus
@@ -68,7 +69,7 @@ object CollectionHelper {
 
         collection.documents.putAll(documentIds)
         collection.updatedAt = Timestamp.now()
-        collection.updatedBy = collection.createdBy
+        collection.updatedBy = SYSTEM_USER
 
         logger.info("Collection object updated with ${documentIds.size} new documents")
         // update collection in firestore
@@ -97,7 +98,7 @@ object CollectionHelper {
 
         collection.documents[documentId] = documentStatus
         collection.updatedAt = Timestamp.now()
-        collection.updatedBy = collection.createdBy
+        collection.updatedBy = SYSTEM_USER
 
         logger.info("Collection object updated with new document: $documentId")
         // update collection in firestore
@@ -116,7 +117,7 @@ object CollectionHelper {
 
         collection.status = status
         collection.updatedAt = Timestamp.now()
-        collection.updatedBy = collection.createdBy
+        collection.updatedBy = SYSTEM_USER
 
         logger.info("Collection object updated with new status: $status")
         // update collection in firestore

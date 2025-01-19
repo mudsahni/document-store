@@ -3,8 +3,9 @@ package com.muditsahni.documentstore.model.entity
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.DocumentSnapshot
 import com.muditsahni.documentstore.exception.CollectionError
-import com.muditsahni.documentstore.model.dto.request.CollectionCreationStatus
-import com.muditsahni.documentstore.model.dto.request.GetCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.CollectionCreationStatus
+import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.GetCollectionResponse
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.CollectionType
 import com.muditsahni.documentstore.model.enum.DocumentStatus
@@ -51,6 +52,18 @@ fun Collection.toCollectionStatus(): CollectionCreationStatus {
         updatedAt = this.updatedAt
     )
 }
+
+fun Collection.toCreateCollectionReponse(documents: Map<String, SignedUrlResponse>): CreateCollectionResponse {
+    return CreateCollectionResponse(
+        id = this.id,
+        name = this.name,
+        status = this.status,
+        type = this.type,
+        documents = documents,
+        error = this.error,
+    )
+}
+
 
 fun Collection.toGetCollectionResponse(): GetCollectionResponse {
     return GetCollectionResponse(

@@ -6,25 +6,35 @@ import com.google.cloud.firestore.Firestore
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.muditsahni.documentstore.config.documentparser.DocumentParserProperties
 import com.muditsahni.documentstore.config.getObjectMapper
+import com.muditsahni.documentstore.exception.CollectionError
+import com.muditsahni.documentstore.exception.CollectionErrorType
 import com.muditsahni.documentstore.exception.DocumentError
-import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundException
+import com.muditsahni.documentstore.exception.throwable.CollectionUploadException
+import com.muditsahni.documentstore.model.dto.request.UploadDocumentTask
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.SignedUrlResponse
-import com.muditsahni.documentstore.model.entity.StorageEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
 import com.muditsahni.documentstore.model.enum.*
+import com.muditsahni.documentstore.util.CloudTasksHelper
 import com.muditsahni.documentstore.util.CollectionHelper
 import com.muditsahni.documentstore.util.DocumentHelper
 import com.muditsahni.documentstore.util.UserHelper
 import com.muditsahni.documentstore.util.await
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactive.awaitSingle
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.http.codec.multipart.FilePart
 import org.springframework.stereotype.Service
+import java.io.ByteArrayOutputStream
+import java.util.Base64
 import java.util.UUID
 
 @Service
-class CollectionsService(
+class CollectionsServiceWIthUploadTasks(
     private val googleCredentials: GoogleCredentials,
     private val firestore: Firestore,
     private val documentParserProperties: DocumentParserProperties,
@@ -115,55 +125,94 @@ class CollectionsService(
         return collection
     }
 
-    suspend fun processStorageEvent(
-        event: StorageEvent
-    ) {
-        logger.info("Processing storage event for file: ${event.name}")
-
-        // Extract tenant and collection IDs from path
-        val pathParts = event.name.split("/")
-        val tenantId = pathParts[0]
-        val collectionId = pathParts[1]
-        val documentId = pathParts[2]
-        val fileName = pathParts[3]
-
-        // Process the uploaded file
-        updateCollectionAndDocument(
-            Tenant.fromTenantId(tenantId),
-            collectionId,
-            documentId,
-            DocumentStatus.UPLOADED
-        )
-    }
-
-    suspend fun updateCollectionAndDocument(
-        tenant: Tenant,
+    private suspend fun createUploadDocumentTask(
+        tenantId: String,
+        userId: String,
         collectionId: String,
         documentId: String,
-        documentStatus: DocumentStatus
+        document: Pair<FilePart, ByteArray>
     ) {
-        logger.info("Updating collection and document")
 
-        // update document status
-        DocumentHelper.updateDocumentStatus(
-            firestore,
-            tenant,
-            documentId,
-            documentStatus
+        logger.info("Uploading document ${document.first.filename()} for user $userId")
+
+        // Encode file content to Base64
+        val fileContentBase64 = Base64.getEncoder().encodeToString(document.second)
+
+        // create task for queue
+        val task = UploadDocumentTask(
+            collectionId = collectionId,
+            documentId = documentId,
+            tenantId = tenantId,
+            userId = userId,
+            fileType = FileType.PDF,
+            fileSize = document.second.size.toLong(),
+            file = fileContentBase64,     // Send Base64 encoded string
+            fileName = document.first.filename(),
+            uploadPath = "${tenantId}/${collectionId}",
+            callbackUrl = "https://${applicationName}-${projectNumber}.${applicationRegion}.run.app/api/v1/tenants/${tenantId}/collections/${collectionId}/upload"
         )
 
-        logger.info("Document updated with status UPLOADED")
+        val taskBody = objectMapper.writeValueAsString(task)
 
-        CollectionHelper.updateCollectionDocuments(
+        logger.info("Task body created")
+
+        googleCredentials.refreshIfExpired()
+
+        logger.info("Token fetched")
+
+        val documentParserUploadEndpoint = "https://${documentParserProperties.name}-${documentParserProperties.projectNumber}.${documentParserProperties.region}.run.app/${documentParserProperties.uri}/${documentParserProperties.version}/" +
+                documentParserProperties.upload
+
+        logger.info("Document parser upload endpoint fetched: $documentParserUploadEndpoint")
+
+        CloudTasksHelper.createNewTask(
+            cloudTasksClient,
+            gcpProjectId,
+            gcpRegion,
+            cloudTasksQueue,
+            documentParserUploadEndpoint,
+            taskBody
+        )
+
+        logger.info("Task created successfully")
+
+        // update collection status
+        CollectionHelper.updateCollectionStatus(
             firestore,
-            tenant,
+            Tenant.fromTenantId(tenantId),
             collectionId,
-            documentId,
-            documentStatus
+            CollectionStatus.DOCUMENT_UPLOADING_TASKS_CREATED
         )
 
-        logger.info("Collection updated with document status UPLOADED")
+    }
 
+    private suspend fun createUploadDocumentTasks(
+        tenant: Tenant,
+        userId: String,
+        collection: Collection,
+        documents: List<Pair<FilePart, ByteArray>>
+    ): List<String> {
+
+        logger.info("Creating uploading tasks for user $userId")
+
+        // create document objects and save them to firestore
+        // link them to collection and user too
+        val documentIds = createAndSaveDocumentsForUpload(
+            userId,
+            tenant,
+            collection.id,
+            documents.map { it.first.filename() }
+        )
+        // create upload document tasks
+        val uploadPaths = mutableListOf<String>()
+        documents.forEachIndexed { index, document ->
+            logger.info("Creating document upload task for ${document.first.filename()}")
+            createUploadDocumentTask(tenant.tenantId, userId, collection.id, documentIds[index], document)
+            uploadPaths.add("${tenant.tenantId}/${collection.id}/${document.first.filename()}")
+        }
+
+
+        return uploadPaths
     }
 
     suspend fun createCollection(
@@ -171,20 +220,50 @@ class CollectionsService(
         tenant: Tenant,
         collectionName: String,
         collectionType: CollectionType,
-        documents: Map<String, String>,
-    ): CreateCollectionResponse {
+        documents: List<FilePart>
+    ): Collection {
 
         logger.info("Creating collection for user $userId")
         // Create collection
         val collection = initiateCollectionCreation(userId, tenant, collectionName, collectionType)
+        // Read all file contents first before launching coroutine
+        val fileContents = documents.map { filePart ->
+            filePart.content()
+                .collectList()
+                .awaitSingle()
+                .fold(ByteArrayOutputStream()) { baos, dataBuffer ->
+                    baos.write(dataBuffer.asInputStream().readBytes())
+                    baos
+                }
+                .toByteArray()
+        }
 
-        // create documents in firestore and signed urls for documents
-        val documentIdsWithSignedUrlResponse = createAndSaveDocumentsForUpload(userId, tenant, collection.id, documents)
+        // Launch the document upload in a new coroutine
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                createUploadDocumentTasks(tenant, userId, collection, documents.zip(fileContents))
+                logger.info("Document upload tasks created successfully")
+            } catch (e: Exception) {
+                logger.error("Failed to upload documents: ${e.message}", e)
+                // Handle error - maybe update collection status
+                // update collection to failed
+                collection.status = CollectionStatus.FAILED
+                collection.error = CollectionError(
+                    "Failed to create tasks for uploading documents",
+                    CollectionErrorType.DOCUMENT_UPLOAD_TASK_CREATION_ERROR
+                )
+                collection.updatedBy = userId
+                collection.updatedAt = Timestamp.now()
+                CollectionHelper.saveCollection(firestore, tenant, collection)
+                logger.info("Collection updated with error")
+                // throw collection upload exception
+                throw CollectionUploadException("Failed to upload documents")
+            }
+        }
 
         // Return collection
-        return collection.toCreateCollectionReponse(documentIdsWithSignedUrlResponse)
+        return collection
     }
-
 
     suspend fun updateDocumentCollectionAndUserWithUploadedDocumentStatus(
         userId: String,
@@ -233,34 +312,28 @@ class CollectionsService(
         userId: String,
         tenant: Tenant,
         collectionId: String,
-        documents: Map<String, String>
-    ): Map<String, SignedUrlResponse> {
+        documents: List<String>
+    ): List<String> {
 
-        val documentIdsWithSignedUrls = mutableMapOf<String, SignedUrlResponse>()
-        val documentIdsWithStatus = mutableMapOf<String, DocumentStatus>()
+        val documentIds = mutableMapOf<String, DocumentStatus>()
 
         documents.forEach {
 
             // create document object
             val document = DocumentHelper.createDocumentObject(
                 userId = userId,
-                name = it.key, // document name
+                name = it,
                 collectionId = collectionId,
                 tenant = tenant,
-                filePath = "${tenant.tenantId}/${collectionId}/${it.key}",
+                filePath = "${tenant.tenantId}/${collectionId}/${it}",
                 type = DocumentType.INVOICE,
                 status = DocumentStatus.PENDING
             )
 
             // save document
             DocumentHelper.saveDocument(firestore, tenant, document)
-            documentIdsWithStatus[document.id] = DocumentStatus.PENDING
-            documentIdsWithSignedUrls[document.id] = storageService.getSignedUrlForDocumentUpload(
-                document.id,
-                "${tenant.tenantId}/${collectionId}/${document.id}",
-                it.key,
-                it.value
-            )
+            documentIds[document.id] = DocumentStatus.PENDING
+
         }
 
         // update collection
@@ -268,7 +341,7 @@ class CollectionsService(
             firestore,
             tenant,
             collectionId,
-            documentIdsWithStatus
+            documentIds
         )
 
         // update user
@@ -276,10 +349,10 @@ class CollectionsService(
             firestore,
             userId,
             tenant,
-            documentIdsWithStatus.keys.toList()
+            documentIds.keys.toList()
         )
 
-        return documentIdsWithSignedUrls
+        return documentIds.keys.toList()
 
     }
 

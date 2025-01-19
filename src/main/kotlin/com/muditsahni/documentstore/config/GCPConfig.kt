@@ -3,6 +3,8 @@ package com.muditsahni.documentstore.config
 import com.google.api.gax.core.FixedCredentialsProvider
 import com.google.auth.Credentials
 import com.google.auth.oauth2.GoogleCredentials
+import com.google.cloud.storage.Storage
+import com.google.cloud.storage.StorageOptions
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.google.cloud.tasks.v2.CloudTasksSettings
 import mu.KotlinLogging
@@ -24,11 +26,18 @@ class GCPConfig(
 
     @Bean
     fun cloudTasksClient(): CloudTasksClient {
-//        val credentials = gcpCredentials()
         return CloudTasksClient.create(
             CloudTasksSettings.newBuilder()
             .setCredentialsProvider(FixedCredentialsProvider.create(googleCredentials))
             .build())
+    }
+
+    @Bean
+    fun storageClient(): Storage {
+        return StorageOptions.newBuilder()
+            .setCredentials(googleCredentials)
+            .build()
+            .service
     }
 
     private fun gcpCredentials(): Credentials {

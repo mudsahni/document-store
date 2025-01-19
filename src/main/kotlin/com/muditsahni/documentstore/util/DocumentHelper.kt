@@ -3,6 +3,7 @@ package com.muditsahni.documentstore.util
 import com.google.cloud.firestore.Firestore
 import com.muditsahni.documentstore.exception.throwable.DocumentNotFoundException
 import com.muditsahni.documentstore.model.entity.Document
+import com.muditsahni.documentstore.model.entity.SYSTEM_USER
 import com.muditsahni.documentstore.model.entity.toDocument
 import com.muditsahni.documentstore.model.enum.DocumentRole
 import com.muditsahni.documentstore.model.enum.DocumentStatus
@@ -85,6 +86,21 @@ object DocumentHelper {
                 userId to DocumentRole.OWNER
             )
         )
+    }
+
+
+    suspend fun updateDocumentStatus(
+        firestore: Firestore,
+        tenant: Tenant,
+        documentId: String,
+        status: DocumentStatus
+    ) {
+        val document = getDocument(firestore, documentId, tenant)
+        document.status = status
+        document.updatedBy = SYSTEM_USER
+        document.updatedAt = System.currentTimeMillis()
+
+        saveDocument(firestore, tenant, document)
     }
 
 

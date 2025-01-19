@@ -3,11 +3,10 @@ package com.muditsahni.documentstore.controller
 import com.muditsahni.documentstore.config.FileUploadConfig
 import com.muditsahni.documentstore.exception.DocumentError
 import com.muditsahni.documentstore.exception.DocumentErrorType
-import com.muditsahni.documentstore.model.dto.request.CollectionCreationStatus
-import com.muditsahni.documentstore.model.dto.request.GetCollectionsResponse
+import com.muditsahni.documentstore.model.dto.response.GetCollectionsResponse
 import com.muditsahni.documentstore.model.dto.request.NewCollectionRequest
 import com.muditsahni.documentstore.model.dto.request.UploadCallbackRequest
-import com.muditsahni.documentstore.model.entity.toCollectionStatus
+import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.toGetCollectionResponse
 import com.muditsahni.documentstore.model.enum.DocumentStatus
 import com.muditsahni.documentstore.model.enum.Tenant
@@ -20,7 +19,6 @@ import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
 import org.springframework.http.ResponseEntity
-import org.springframework.http.codec.multipart.FilePart
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
@@ -95,7 +93,7 @@ class CollectionsController(
 
         logger.info { "Collections fetched successfully" }
         // Return collections
-        return ResponseEntity.ok(GetCollectionsResponse(collections = collections.map { it.toGetCollectionResponse()}))
+        return ResponseEntity.ok(GetCollectionsResponse(collections = collections.map { it.toGetCollectionResponse() }))
     }
 
 //    @PostMapping
@@ -111,28 +109,28 @@ class CollectionsController(
     @PostMapping
     suspend fun create(
         @PathVariable tenantId: String,
-        @ModelAttribute request: NewCollectionRequest,
+        @RequestBody request: NewCollectionRequest,
         @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
-    ): ResponseEntity<CollectionCreationStatus> {
+    ): ResponseEntity<CreateCollectionResponse> {
 
         logger.info { "Create collection call received" }
 
-        request.files.forEach { it -> validateFile(it) }
+        request.files.forEach { it -> validateFile(it.key, it.value) }
+
         // Create collection
-        val collection = collectionsService.createCollection(
+        return ResponseEntity.ok(collectionsService.createCollection(
             firebaseUserDetails.uid,
             firebaseUserDetails.tenant,
             request.name,
             request.type,
             request.files,
-        )
-        return ResponseEntity.ok(collection.toCollectionStatus())
+        ))
     }
 
-    private fun validateFile(file: FilePart) {
+    private fun validateFile(fileName: String, fileType: String) {
         // Check content type
-        require(file.headers().contentType.toString() in FileUploadConfig.ALLOWED_CONTENT_TYPES) {
-            "File ${file.filename()} must be a PDF"
+        require(fileType in FileUploadConfig.ALLOWED_CONTENT_TYPES) {
+            "File $fileName must be a PDF"
         }
 
         // Check file size

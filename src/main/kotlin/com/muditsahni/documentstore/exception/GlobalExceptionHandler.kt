@@ -1,6 +1,7 @@
 package com.muditsahni.documentstore.exception
 
 import com.muditsahni.documentstore.exception.throwable.ResourceNotFoundException
+import okio.FileNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -58,6 +59,19 @@ class GlobalExceptionHandler {
                 timestamp = LocalDateTime.now()
             ))
     }
+
+    @ExceptionHandler(FileNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleFileNotFoundException(ex: FileNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(
+                status = HttpStatus.NOT_FOUND.value(),
+                message = ex.message ?: "Resource not found",
+                timestamp = LocalDateTime.now()
+            ))
+    }
+
 
 }
 
