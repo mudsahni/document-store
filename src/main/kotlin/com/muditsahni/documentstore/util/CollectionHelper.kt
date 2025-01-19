@@ -89,7 +89,7 @@ object CollectionHelper {
             collection.status = CollectionStatus.IN_PROGRESS
         }
 
-        if (collection.status == CollectionStatus.DOCUMENT_UPLOADING_TASKS_CREATED) {
+        if (collection.status in listOf(CollectionStatus.DOCUMENT_UPLOADING_TASKS_CREATED, CollectionStatus.IN_PROGRESS)) {
             if (collection.documents.all { it.value == DocumentStatus.UPLOADED }) {
                 collection.status = CollectionStatus.DOCUMENTS_UPLOAD_COMPLETE
             }
