@@ -6,9 +6,12 @@ import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundExcept
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.SYSTEM_USER
+import com.muditsahni.documentstore.model.entity.SignedUrlResponse
 import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.DocumentStatus
+import com.muditsahni.documentstore.model.enum.DocumentType
+import com.muditsahni.documentstore.service.StorageService
 
 import mu.KotlinLogging
 
@@ -82,7 +85,7 @@ object CollectionHelper {
         collectionId: String,
         documentId: String,
         documentStatus: DocumentStatus
-    ) {
+    ): Collection {
 
         val collection = getCollection(firestore, collectionId, tenant)
 
@@ -90,8 +93,11 @@ object CollectionHelper {
             collection.status = CollectionStatus.IN_PROGRESS
         }
 
-        if (collection.status in listOf(CollectionStatus.DOCUMENT_UPLOADING_TASKS_CREATED, CollectionStatus.IN_PROGRESS)) {
-            if (collection.documents.all { it.value == DocumentStatus.UPLOADED }) {
+
+
+        if (collection.status == CollectionStatus.IN_PROGRESS) {
+            val notPendingDocuments = collection.documents.count { it.value != DocumentStatus.PENDING }
+            if (notPendingDocuments == 0 || notPendingDocuments+1 == collection.documents.size) {
                 collection.status = CollectionStatus.DOCUMENTS_UPLOAD_COMPLETE
             }
         }
@@ -103,6 +109,8 @@ object CollectionHelper {
         logger.info("Collection object updated with new document: $documentId")
         // update collection in firestore
         saveCollection(firestore, tenant, collection)
+
+        return collection
     }
 
 
@@ -123,4 +131,61 @@ object CollectionHelper {
         // update collection in firestore
         saveCollection(firestore, tenant, collection)
     }
+
+    suspend fun createAndSaveDocumentsForUpload(
+        firestore: Firestore,
+        storageService: StorageService,
+        userId: String,
+        tenant: Tenant,
+        collectionId: String,
+        documents: Map<String, String>
+    ): Map<String, SignedUrlResponse> {
+
+        val documentIdsWithSignedUrls = mutableMapOf<String, SignedUrlResponse>()
+        val documentIdsWithStatus = mutableMapOf<String, DocumentStatus>()
+
+        documents.forEach {
+
+            // create document object
+            val document = DocumentHelper.createDocumentObject(
+                userId = userId,
+                name = it.key, // document name
+                collectionId = collectionId,
+                tenant = tenant,
+                filePath = "${tenant.tenantId}/${collectionId}/${it.key}",
+                type = DocumentType.INVOICE,
+                status = DocumentStatus.PENDING
+            )
+
+            // save document
+            DocumentHelper.saveDocument(firestore, tenant, document)
+            documentIdsWithStatus[document.id] = DocumentStatus.PENDING
+            documentIdsWithSignedUrls[document.id] = storageService.getSignedUrlForDocumentUpload(
+                document.id,
+                "${tenant.tenantId}/${collectionId}/${document.id}",
+                it.key,
+                it.value
+            )
+        }
+
+        // update collection
+        updateCollectionDocuments(
+            firestore,
+            tenant,
+            collectionId,
+            documentIdsWithStatus
+        )
+
+        // update user
+        UserHelper.updateUserDocuments(
+            firestore,
+            userId,
+            tenant,
+            documentIdsWithStatus.keys.toList()
+        )
+
+        return documentIdsWithSignedUrls
+
+    }
+
 }

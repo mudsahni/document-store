@@ -57,8 +57,8 @@ class StorageService(
 
     }
 
-    suspend fun getFileUrl(tenantId: String, collectionId: String, fileName: String): String {
-        val blobId = BlobId.of(bucketName, "${tenantId}/${collectionId}/${fileName}")
+    suspend fun getFileUrl(tenantId: String, collectionId: String, documentId: String, fileName: String): String {
+        val blobId = BlobId.of(bucketName, "${tenantId}/${collectionId}/${documentId}/${fileName}")
         val blob = storageClient.get(blobId)
         return blob?.signUrl(1, TimeUnit.HOURS)?.toString()
             ?: throw FileNotFoundException("File not found: $fileName")

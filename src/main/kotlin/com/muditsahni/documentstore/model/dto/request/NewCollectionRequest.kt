@@ -3,7 +3,9 @@ package com.muditsahni.documentstore.model.dto.request
 import com.muditsahni.documentstore.model.enum.CollectionType
 import jakarta.validation.constraints.NotBlank
 import jakarta.validation.constraints.NotEmpty
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class NewCollectionRequest(
     @field:NotEmpty(message = "Files are required")
     val files: Map<String, String>,

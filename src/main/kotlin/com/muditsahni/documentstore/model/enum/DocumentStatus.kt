@@ -1,13 +1,15 @@
 package com.muditsahni.documentstore.model.enum
 
-enum class DocumentStatus {
+enum class DocumentStatus(val value: String) {
+    // pending -> uploaded -> in_progress -> parsed -> validated -> approved
 
-    UPLOADED,
-    PENDING,
-    PARSED,
-    VALIDATED,
-    ERROR,
-    APPROVED;
+    UPLOADED("uploaded"),
+    IN_PROGRESS("in_progress"),
+    PENDING("pending"),
+    PARSED("parsed"),
+    VALIDATED("validated"),
+    ERROR("error"),
+    APPROVED("approved");
 
     companion object {
         fun fromString(documentStatus: String): DocumentStatus {

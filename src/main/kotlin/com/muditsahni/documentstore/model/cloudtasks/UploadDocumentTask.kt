@@ -1,7 +1,11 @@
-package com.muditsahni.documentstore.model.dto.request
+package com.muditsahni.documentstore.model.cloudtasks
 
 import com.muditsahni.documentstore.model.enum.FileType
+import kotlinx.serialization.Serializable
+import kotlin.jvm.javaClass
+import kotlin.text.contentEquals
 
+@Serializable
 data class UploadDocumentTask(
     val uploadPath: String,
     val fileName: String,

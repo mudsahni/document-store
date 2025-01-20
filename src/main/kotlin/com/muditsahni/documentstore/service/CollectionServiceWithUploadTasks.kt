@@ -10,12 +10,10 @@ import com.muditsahni.documentstore.exception.CollectionError
 import com.muditsahni.documentstore.exception.CollectionErrorType
 import com.muditsahni.documentstore.exception.DocumentError
 import com.muditsahni.documentstore.exception.throwable.CollectionUploadException
-import com.muditsahni.documentstore.model.dto.request.UploadDocumentTask
-import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
+import com.muditsahni.documentstore.model.cloudtasks.UploadDocumentTask
 import com.muditsahni.documentstore.model.entity.Collection
-import com.muditsahni.documentstore.model.entity.SignedUrlResponse
-import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
 import com.muditsahni.documentstore.model.enum.*
+import com.muditsahni.documentstore.service.impl.DefaultCollectionService
 import com.muditsahni.documentstore.util.CloudTasksHelper
 import com.muditsahni.documentstore.util.CollectionHelper
 import com.muditsahni.documentstore.util.DocumentHelper
@@ -51,7 +49,7 @@ class CollectionsServiceWIthUploadTasks(
 
     companion object {
         private val logger = KotlinLogging.logger {
-            CollectionsService::class.java.name
+            DefaultCollectionService::class.java.name
         }
         private val objectMapper = getObjectMapper()
     }

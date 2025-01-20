@@ -3,12 +3,12 @@ package com.muditsahni.documentstore.model.entity
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.DocumentSnapshot
 import com.muditsahni.documentstore.exception.CollectionError
-import com.muditsahni.documentstore.model.dto.response.CollectionCreationStatus
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.dto.response.GetCollectionResponse
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.CollectionType
 import com.muditsahni.documentstore.model.enum.DocumentStatus
+import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 
 data class Collection(
 
@@ -40,16 +40,15 @@ fun DocumentSnapshot.toCollection(): Collection {
     )
 }
 
-fun Collection.toCollectionStatus(): CollectionCreationStatus {
-    return CollectionCreationStatus(
+fun Collection.toCollectionStatusEvent(): CollectionStatusEvent {
+    return CollectionStatusEvent(
         id = this.id,
         name = this.name,
         status = this.status,
         type = this.type,
         documents = this.documents,
         error = this.error,
-        createdAt = this.createdAt,
-        updatedAt = this.updatedAt
+        timestamp = this.updatedAt ?: this.createdAt
     )
 }
 

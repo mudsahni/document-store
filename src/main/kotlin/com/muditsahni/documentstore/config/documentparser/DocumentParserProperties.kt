@@ -9,5 +9,6 @@ data class DocumentParserProperties(
     val region: String,
     val uri: String,
     val version: String,
-    val upload: String
+    val upload: String,
+    val process: String
 )

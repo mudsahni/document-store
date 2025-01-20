@@ -7,10 +7,13 @@ import com.google.cloud.storage.Storage
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.http.codec.ServerSentEvent
 import org.springframework.test.context.bean.override.mockito.MockitoBean
+import reactor.core.publisher.Sinks
 
 @SpringBootTest
 class ApplicationTests {
@@ -38,6 +41,9 @@ class ApplicationTests {
 
 	@MockitoBean
 	lateinit var coroutineScope: CoroutineScope
+
+	@MockitoBean
+	lateinit var eventSink: Sinks.Many<ServerSentEvent<CollectionStatusEvent>>
 
 	@Test
 	fun contextLoads() {

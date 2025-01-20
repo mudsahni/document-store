@@ -5,6 +5,7 @@ import com.muditsahni.documentstore.exception.DocumentError
 import com.muditsahni.documentstore.exception.DocumentErrorType
 import com.muditsahni.documentstore.model.dto.response.GetCollectionsResponse
 import com.muditsahni.documentstore.model.dto.request.NewCollectionRequest
+import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.request.UploadCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.toGetCollectionResponse
@@ -12,16 +13,21 @@ import com.muditsahni.documentstore.model.enum.DocumentStatus
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.enum.UploadStatus
 import com.muditsahni.documentstore.model.enum.UserRole
+import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import com.muditsahni.documentstore.security.FirebaseUserDetails
-import com.muditsahni.documentstore.service.CollectionsService
+import com.muditsahni.documentstore.service.EventStreamService
+import com.muditsahni.documentstore.service.impl.DefaultCollectionService
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
 import org.springframework.http.ResponseEntity
+import org.springframework.http.codec.ServerSentEvent
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 
 
 @RestController
@@ -29,13 +35,23 @@ import org.springframework.web.bind.annotation.*
 @Tag(name = "Document Upload", description = "Endpoints for document upload and processing")
 @SecurityRequirement(name = "firebase")
 class CollectionsController(
-    private val collectionsService: CollectionsService
+    private val collectionsService: DefaultCollectionService,
+    private val eventStreamService: EventStreamService
 ) {
 
     companion object {
         private val logger = KotlinLogging.logger {
             CollectionsController::class.java.name
         }
+    }
+
+    @GetMapping("/{collectionId}/sse")
+    fun subscribeToCollectionEvents(
+        @PathVariable tenantId: String,
+        @PathVariable collectionId: String
+    ): Flux<ServerSentEvent<CollectionStatusEvent>>  {
+
+        return eventStreamService.getEventStream(collectionId)
     }
 
     @PostMapping("/{collectionId}/upload")
@@ -125,6 +141,21 @@ class CollectionsController(
             request.type,
             request.files,
         ))
+    }
+
+    @PostMapping("/{collectionId}/documents/{documentId}/process")
+    suspend fun processDocument(
+        @PathVariable tenantId: String,
+        @PathVariable collectionId: String,
+        @PathVariable documentId: String,
+        @RequestBody processDocumentCallbackRequest: ProcessDocumentCallbackRequest,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<String> {
+        logger.info { "Process document call received" }
+
+        collectionsService.receiveProcessedDocument(userDetails.tenant, collectionId, processDocumentCallbackRequest)
+
+        return ResponseEntity.ok("Document processing started")
     }
 
     private fun validateFile(fileName: String, fileType: String) {

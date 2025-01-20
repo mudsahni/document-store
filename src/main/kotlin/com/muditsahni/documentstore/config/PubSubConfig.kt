@@ -6,7 +6,7 @@ import com.google.cloud.pubsub.v1.Subscriber
 import com.google.pubsub.v1.ProjectSubscriptionName
 import com.google.pubsub.v1.TopicName
 import com.muditsahni.documentstore.model.entity.StorageEvent
-import com.muditsahni.documentstore.service.CollectionsService
+import com.muditsahni.documentstore.service.impl.DefaultCollectionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
@@ -21,7 +21,7 @@ class PubSubConfig(
 ) {
 
     @Autowired
-    private lateinit var collectionsService: CollectionsService
+    private lateinit var collectionsService: DefaultCollectionService
 
 
     companion object {

@@ -45,6 +45,7 @@ document-parser:
   uri: "api"
   version: "v1"
   upload: "upload"
+  process: "process"
 
 logging:
   level:
