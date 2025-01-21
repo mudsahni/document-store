@@ -32,7 +32,7 @@ class FirebaseAuthenticationFilter(
 
         this.setServerAuthenticationConverter { exchange ->
             val requestPath = exchange.request.uri.path
-            val regex = Regex("/api/v1/tenants/[^/]+/collections/[^/]+/upload")
+            val regex = Regex("/api/v1/tenants/[^/]+/collections/[^/]+/documents/[^/]*/process")
 
             if (regex.matches(requestPath)) {
                 logger.debug("Skipping authentication for callback endpoint")
