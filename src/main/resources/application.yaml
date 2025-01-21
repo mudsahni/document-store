@@ -28,7 +28,7 @@ gcp:
   bucket:
     name: "ms_document_store_one"
   project-id: ${spring.cloud.gcp.project-id}
-  service-account: ${GCP_SERVICE_ACCOUNT}
+  service-account: ${GCP_SERVICE_ACCOUNT:document-store-api}
   region: ${GCP_REGION:asia-south1}  # Added region with default
   cloud-tasks:
     location: ${CLOUDTASKS_REGION:asia-south1}  # Required for Cloud Tasks
