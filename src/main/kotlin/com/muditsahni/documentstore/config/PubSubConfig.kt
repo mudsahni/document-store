@@ -52,6 +52,7 @@ class PubSubConfig(
             scope.launch {
                 try {
                     val messageData = message.data.toStringUtf8()
+                    logger.info("Received message: $messageData")
                     val event = objectMapper.readValue(messageData, StorageEvent::class.java)
 
                     logger.info("Received storage notification for file: ${event.name}")

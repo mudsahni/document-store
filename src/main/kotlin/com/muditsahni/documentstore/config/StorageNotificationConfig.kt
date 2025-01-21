@@ -21,40 +21,40 @@ class StorageNotificationConfig(
 
     @PostConstruct
     fun configureStorageNotification() {
-        try {
-            val topicPath = "projects/$projectId/topics/$topic"
-
-            // Check existing notifications
-            val existingNotifications = storageClient.listNotifications(bucketName)
-            val hasMatchingNotification = existingNotifications.any { notification ->
-                notification.topic == topicPath &&
-                        notification.eventTypes.contains(NotificationInfo.EventType.OBJECT_FINALIZE)
-            }
-
-            if (hasMatchingNotification) {
-                logger.info { "Notification already exists for bucket: $bucketName with topic: $topicPath" }
-                return
-            }
-
-            // Create new notification only if none exists
-            logger.info { "Creating new notification for bucket: $bucketName with topic: $topicPath" }
-            storageClient.createNotification(
-                bucketName,
-                Notification.newBuilder(topicPath)
-                    .setEventTypes(NotificationInfo.EventType.OBJECT_FINALIZE)
-                    .build()
-            )
-            logger.info { "Successfully created notification" }
-
-        } catch (e: Exception) {
-            logger.error(e) {
-                """
-                Failed to configure notification:
-                Project ID: $projectId
-                Topic: $topic
-                Bucket: $bucketName
-                """.trimIndent()
-            }
-        }
+//        try {
+//            val topicPath = "projects/$projectId/topics/$topic"
+//
+//            // Check existing notifications
+//            val existingNotifications = storageClient.listNotifications(bucketName)
+//            val hasMatchingNotification = existingNotifications.any { notification ->
+//                notification.topic == topicPath &&
+//                        notification.eventTypes.contains(NotificationInfo.EventType.OBJECT_FINALIZE)
+//            }
+//
+//            if (hasMatchingNotification) {
+//                logger.info { "Notification already exists for bucket: $bucketName with topic: $topicPath" }
+//                return
+//            }
+//
+//            // Create new notification only if none exists
+//            logger.info { "Creating new notification for bucket: $bucketName with topic: $topicPath" }
+//            storageClient.createNotification(
+//                bucketName,
+//                Notification.newBuilder(topicPath)
+//                    .setEventTypes(NotificationInfo.EventType.OBJECT_FINALIZE)
+//                    .build()
+//            )
+//            logger.info { "Successfully created notification" }
+//
+//        } catch (e: Exception) {
+//            logger.error(e) {
+//                """
+//                Failed to configure notification:
+//                Project ID: $projectId
+//                Topic: $topic
+//                Bucket: $bucketName
+//                """.trimIndent()
+//            }
+//        }
     }
 }
