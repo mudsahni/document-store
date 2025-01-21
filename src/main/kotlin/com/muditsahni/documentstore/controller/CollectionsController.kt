@@ -149,13 +149,22 @@ class CollectionsController(
         @PathVariable collectionId: String,
         @PathVariable documentId: String,
         @RequestBody processDocumentCallbackRequest: ProcessDocumentCallbackRequest,
-        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+        @AuthenticationPrincipal jwt: Jwt
     ): ResponseEntity<String> {
-        logger.info { "Process document call received" }
+        try {
+            logger.info { "Process document call received" }
 
-        collectionsService.receiveProcessedDocument(userDetails.tenant, collectionId, processDocumentCallbackRequest)
+            collectionsService.receiveProcessedDocument(
+                Tenant.fromTenantId(tenantId),
+                collectionId,
+                processDocumentCallbackRequest
+            )
 
-        return ResponseEntity.ok("Document processing started")
+            return ResponseEntity.ok("Document processing started")
+        } catch (e: Exception) {
+            logger.error(e) { "Error processing document" }
+            throw e
+        }
     }
 
     private fun validateFile(fileName: String, fileType: String) {

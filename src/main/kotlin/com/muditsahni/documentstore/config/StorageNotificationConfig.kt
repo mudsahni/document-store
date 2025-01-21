@@ -27,15 +27,28 @@ class StorageNotificationConfig(
     fun configureStorageNotification(
     ) {
         try {
+
+            val topicPath = "projects/$projectId/topics/$topic"
+            logger.info { "Creating notification for bucket: $bucketName with topic: $topicPath" }
+
             storageClient.createNotification(
                 bucketName,
-                Notification.newBuilder(TopicName.of(projectId, topic).topic)
+                Notification.newBuilder(topicPath)
                     .setEventTypes(NotificationInfo.EventType.OBJECT_FINALIZE)
                     .build()
             )
+            logger.info { "Successfully created notification" }
         } catch (e: Exception) {
             // Notification might already exist
-            logger.warn("Failed to create notification: ${e.message}")
+            logger.warn {
+                """
+                Failed to create notification:
+                Project ID: $projectId
+                Topic: $topic
+                Bucket: $bucketName
+                Error: ${e.message}
+                """.trimIndent()
+            }
         }
     }
 }

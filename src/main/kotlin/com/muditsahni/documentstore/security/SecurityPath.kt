@@ -25,9 +25,15 @@ enum class SecurityPath(val pattern: String) {
 
         ).map { it.pattern }
 
+        private fun String.toRegexPattern(): Regex {
+            return this.replace("/", "\\/")
+                .replace("*", "[^/]+")
+                .toRegex()
+        }
+
         fun firebaseBypassPaths() = setOf(
             PROCESS_CALLBACK,
             SSE
-        ).map { it.pattern.toRegex() }
+        ).map { it.pattern.toRegexPattern() }
     }
 }

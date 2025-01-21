@@ -28,9 +28,17 @@ class FirebaseAuthenticationFilter(
         private val logger = KotlinLogging.logger { FirebaseAuthenticationFilter::class.java.name }
     }
 
-    private fun shouldBypassAuthentication(path: String): Boolean =
-        SecurityPath.firebaseBypassPaths().any { it.matches(path) }
-
+    private fun shouldBypassAuthentication(path: String): Boolean {
+        logger.info("Checking if path should bypass authentication: $path")
+        val patterns = SecurityPath.firebaseBypassPaths()
+        patterns.forEach { pattern ->
+            logger.info("Checking against pattern: ${pattern.pattern}")
+            logger.info("Matches: ${pattern.matches(path)}")
+        }
+        val shouldBypass = patterns.any { it.matches(path) }
+        logger.info("Should bypass authentication: $shouldBypass")
+        return shouldBypass
+    }
 
     init {
         this.setServerAuthenticationConverter { exchange ->
