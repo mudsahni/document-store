@@ -9,7 +9,6 @@ import kotlinx.serialization.Serializable
 data class ProcessDocumentCallbackRequest(
     val id: String,
     val name: String,
-    val path: String,
     val type: DocumentType,
     @JsonProperty("parsed_data")
     val parsedData: String? = null,
