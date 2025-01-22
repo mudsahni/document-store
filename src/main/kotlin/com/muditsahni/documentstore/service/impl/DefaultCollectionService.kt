@@ -9,10 +9,13 @@ import com.muditsahni.documentstore.config.getObjectMapper
 import com.muditsahni.documentstore.exception.CollectionError
 import com.muditsahni.documentstore.exception.CollectionErrorType
 import com.muditsahni.documentstore.exception.DocumentError
+import com.muditsahni.documentstore.exception.DocumentErrorType
 import com.muditsahni.documentstore.model.cloudtasks.DocumentProcessingTask
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.Collection
+import com.muditsahni.documentstore.model.entity.ParsedData
+import com.muditsahni.documentstore.model.entity.ParsedDataMetadata
 import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.entity.StorageEvent
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
@@ -199,6 +202,42 @@ class DefaultCollectionService(
     ) {
         // get processed document
 
+        // update document
+        val document = DocumentHelper.getDocument(firestore, processDocumentCallbackRequest.id, tenant)
+        if (processDocumentCallbackRequest.error != null) {
+            document.status = DocumentStatus.ERROR
+            document.error = DocumentError(
+                processDocumentCallbackRequest.error.message,
+                DocumentErrorType.DOCUMENT_PARSING_ERROR,
+            )
+        } else {
+            document.status = DocumentStatus.PARSED
+            document.parsedData = ParsedData(
+                data = objectMapper.readValue(processDocumentCallbackRequest.parsedData, Map::class.java) as MutableMap<String, Any>,
+                metadata = ParsedDataMetadata(
+                    manual = false,
+                    image = false,
+                    multiPage = false,
+                    validation = emptyMap(),
+                    clientDetails = emptyList(),
+                    retryCount = 0
+                )
+            )
+        }
+        DocumentHelper.saveDocument(
+            firestore,
+            tenant,
+            document
+        )
+
+        // update collection
+        CollectionHelper.updateCollectionDocuments(
+            firestore,
+            tenant,
+            collectionId,
+            processDocumentCallbackRequest.id,
+            document.status
+        )
         // emit event
         eventStreamService.completeStream(collectionId)
     }
