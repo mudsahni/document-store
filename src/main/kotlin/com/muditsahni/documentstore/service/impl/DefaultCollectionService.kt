@@ -150,6 +150,9 @@ class DefaultCollectionService(
 
         logger.info("Got signed url for document: $downloadableLink")
 
+        val prompt = "${invoiceParsingPromptTemplate.prompt}\n${invoiceParsingPromptTemplate.template}"
+        logger.info("Prompt for document: $prompt")
+
         val task = DocumentProcessingTask(
             id = documentId,
             collectionId = collectionId,
@@ -158,7 +161,7 @@ class DefaultCollectionService(
             url = downloadableLink,
             type = DocumentType.INVOICE,
             fileType = FileType.PDF,
-            prompt = invoiceParsingPromptTemplate.prompt + "\n" + invoiceParsingPromptTemplate.template,
+            prompt = prompt,
             callbackUrl = "https://${applicationName}-${projectNumber}." +
                     "${applicationRegion}.run.app/api/v1/tenants/${tenantId}/collections/" +
                     "${collectionId}/documents/${documentId}/process"
