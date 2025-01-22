@@ -1,31 +1,25 @@
 package com.muditsahni.documentstore.service.impl
 
 import com.google.auth.oauth2.GoogleCredentials
-import com.google.cloud.Timestamp
 import com.google.cloud.firestore.Firestore
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.muditsahni.documentstore.config.documentparser.DocumentParserProperties
 import com.muditsahni.documentstore.config.getObjectMapper
-import com.muditsahni.documentstore.exception.CollectionError
-import com.muditsahni.documentstore.exception.CollectionErrorType
 import com.muditsahni.documentstore.exception.DocumentError
 import com.muditsahni.documentstore.exception.DocumentErrorType
 import com.muditsahni.documentstore.model.cloudtasks.DocumentProcessingTask
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.Collection
-import com.muditsahni.documentstore.model.entity.ParsedData
-import com.muditsahni.documentstore.model.entity.ParsedDataMetadata
 import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.entity.StorageEvent
+import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
 import com.muditsahni.documentstore.model.enum.*
-import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import com.muditsahni.documentstore.service.CollectionService
 import com.muditsahni.documentstore.service.EventStreamService
 import com.muditsahni.documentstore.service.StorageService
-import com.muditsahni.documentstore.util.CloudTasksHelper
 import com.muditsahni.documentstore.util.CollectionHelper
 import com.muditsahni.documentstore.util.DocumentHelper
 import com.muditsahni.documentstore.util.UserHelper
@@ -36,7 +30,6 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
-import java.util.UUID
 import kotlin.collections.mapNotNull
 import kotlin.jvm.java
 import kotlin.text.split
@@ -200,36 +193,48 @@ class DefaultCollectionService(
         collectionId: String,
         processDocumentCallbackRequest: ProcessDocumentCallbackRequest
     ) {
-        // get processed document
 
-        // update document
-        val document = DocumentHelper.getDocument(firestore, processDocumentCallbackRequest.id, tenant)
-        if (processDocumentCallbackRequest.error != null) {
-            document.status = DocumentStatus.ERROR
-            document.error = DocumentError(
-                processDocumentCallbackRequest.error.message,
-                DocumentErrorType.DOCUMENT_PARSING_ERROR,
-            )
-        } else {
-            document.status = DocumentStatus.PARSED
-            document.parsedData = processDocumentCallbackRequest.parsedData
+        try {
+            // get processed document
+
+            // update document
+            val document = DocumentHelper.getDocument(firestore, processDocumentCallbackRequest.id, tenant)
+            if (processDocumentCallbackRequest.error != null) {
+                document.status = DocumentStatus.ERROR
+                document.error = DocumentError(
+                    processDocumentCallbackRequest.error.message,
+                    DocumentErrorType.DOCUMENT_PARSING_ERROR,
+                )
+            } else {
+                document.status = DocumentStatus.PARSED
+                document.parsedData = objectMapper.readValue<InvoiceWrapper>(processDocumentCallbackRequest.parsedData,
+                    InvoiceWrapper::class.java
+                )
+            }
+
+            scope.launch {
+                DocumentHelper.saveDocument(
+                    firestore,
+                    tenant,
+                    document
+                )
+
+                // update collection
+                CollectionHelper.updateCollectionDocuments(
+                    firestore,
+                    tenant,
+                    collectionId,
+                    processDocumentCallbackRequest.id,
+                    document.status
+                )
+            }
+            // emit event
+            eventStreamService.completeStream(collectionId)
+        } catch (e: Exception) {
+            logger.error(e) { "Error processing document callback" }
+            // You might want to emit an error event here
+            throw e
         }
-        DocumentHelper.saveDocument(
-            firestore,
-            tenant,
-            document
-        )
-
-        // update collection
-        CollectionHelper.updateCollectionDocuments(
-            firestore,
-            tenant,
-            collectionId,
-            processDocumentCallbackRequest.id,
-            document.status
-        )
-        // emit event
-        eventStreamService.completeStream(collectionId)
     }
 
     suspend fun validateProcessedDocument() {

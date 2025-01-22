@@ -1,11 +1,13 @@
-package com.muditsahni.documentstore.model.entity
+package com.muditsahni.documentstore.model.entity.document
 
 import com.google.cloud.firestore.DocumentSnapshot
 import com.muditsahni.documentstore.exception.DocumentError
+import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.enum.AIClient
 import com.muditsahni.documentstore.model.enum.DocumentRole
 import com.muditsahni.documentstore.model.enum.DocumentStatus
 import com.muditsahni.documentstore.model.enum.DocumentType
+import java.lang.IllegalStateException
 
 data class Document(
     val id: String,
@@ -14,7 +16,7 @@ data class Document(
     val type: DocumentType,
     val collectionId: String,
     var status: DocumentStatus = DocumentStatus.PENDING,
-    var parsedData: String? = null,
+    var parsedData: InvoiceWrapper? = null,
     var private: Boolean,
     var error: DocumentError? = null,
     var permissions: MutableMap<String, DocumentRole> = mutableMapOf(),
@@ -49,9 +51,12 @@ fun DocumentSnapshot.toDocument(): Document {
         path = getString("path"),
         type = DocumentType.fromString(getString("type") ?: throw IllegalStateException("Document type not found")),
         collectionId = getString("collectionId") ?: throw IllegalStateException("Document collectionId not found"),
-        status = DocumentStatus.fromString(getString("status") ?: throw IllegalStateException("Document status not found")),
+        status = DocumentStatus.fromString(
+            getString("status") ?: throw IllegalStateException("Document status not found")
+        ),
+        parsedData = get("parsedData") as InvoiceWrapper?,
 //        parsedData = get("parsedData") as ParsedData?,
-        parsedData = getString("parsedData"),
+//        parsedData = getString("parsedData"),
         private = getBoolean("private") ?: throw IllegalStateException("Document private not found"),
         // TODO: Find a good way to do this
         permissions = get("permissions") as MutableMap<String, DocumentRole>,
