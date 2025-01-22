@@ -23,8 +23,10 @@ class EventStreamService {
     }
 
     fun createEventStream(processId: String): String {
+        logger.info("Creating event stream for process: $processId")
         val sink = Sinks.many().multicast().onBackpressureBuffer<ServerSentEvent<CollectionStatusEvent>>()
         processStreams[processId] = sink
+        logger.info("Event stream created for process: $processId")
         return processId
     }
 
@@ -69,6 +71,7 @@ class EventStreamService {
         val sink = processStreams.remove(processId)
         return if (sink != null) {
             sink.tryEmitComplete()
+            logger.info("Stream completed: $processId")
             true
         } else {
             logger.warn("Attempted to complete non-existent stream: $processId")
