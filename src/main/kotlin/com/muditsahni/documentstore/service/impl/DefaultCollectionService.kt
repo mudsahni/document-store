@@ -212,17 +212,7 @@ class DefaultCollectionService(
             )
         } else {
             document.status = DocumentStatus.PARSED
-            document.parsedData = ParsedData(
-                data = objectMapper.readValue(processDocumentCallbackRequest.parsedData, Map::class.java) as MutableMap<String, Any>,
-                metadata = ParsedDataMetadata(
-                    manual = false,
-                    image = false,
-                    multiPage = false,
-                    validation = emptyMap(),
-                    clientDetails = emptyList(),
-                    retryCount = 0
-                )
-            )
+            document.parsedData = processDocumentCallbackRequest.parsedData
         }
         DocumentHelper.saveDocument(
             firestore,

@@ -14,7 +14,7 @@ data class Document(
     val type: DocumentType,
     val collectionId: String,
     var status: DocumentStatus = DocumentStatus.PENDING,
-    var parsedData: ParsedData? = null,
+    var parsedData: String? = null,
     var private: Boolean,
     var error: DocumentError? = null,
     var permissions: MutableMap<String, DocumentRole> = mutableMapOf(),
@@ -50,7 +50,8 @@ fun DocumentSnapshot.toDocument(): Document {
         type = DocumentType.fromString(getString("type") ?: throw IllegalStateException("Document type not found")),
         collectionId = getString("collectionId") ?: throw IllegalStateException("Document collectionId not found"),
         status = DocumentStatus.fromString(getString("status") ?: throw IllegalStateException("Document status not found")),
-        parsedData = get("parsedData") as ParsedData?,
+//        parsedData = get("parsedData") as ParsedData?,
+        parsedData = getString("parsedData"),
         private = getBoolean("private") ?: throw IllegalStateException("Document private not found"),
         // TODO: Find a good way to do this
         permissions = get("permissions") as MutableMap<String, DocumentRole>,
