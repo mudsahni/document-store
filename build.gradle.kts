@@ -110,6 +110,30 @@ tasks.withType<KotlinCompile> {
 	}
 }
 
+tasks.withType<Jar> {
+	from("src/main/resources") {
+		include("parsing-templates/**")
+	}
+}
+
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }
+
+tasks.bootJar {
+	duplicatesStrategy = DuplicatesStrategy.INCLUDE
+	from("src/main/resources") {
+		include("parsing-templates/**")
+	}
+}
+
+
+sourceSets {
+	main {
+		resources {
+			srcDirs("src/main/resources")
+		}
+	}
+}
+

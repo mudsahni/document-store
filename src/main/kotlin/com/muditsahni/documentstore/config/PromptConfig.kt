@@ -15,14 +15,14 @@ class PromptConfig {
     @Bean(name = ["InvoicePromptTemplate"])
     fun loadInvoiceParsingPromptTemplate(): PromptTemplate {
         val objectMapper = getObjectMapper()
-        val resource = ClassPathResource("parsing-templates/invoice-parsing-template.json")  // Ensure your file is in src/main/resources/
+        val resource = ClassPathResource("./parsing-templates/invoice-parsing-template.json")  // Ensure your file is in src/main/resources/
 
         try {
             resource.inputStream.use {
                 return objectMapper.readValue(it, PromptTemplate::class.java)
             }
         } catch (e: IOException) {
-            throw RuntimeException("Failed to load configuration from config.json", e)
+            throw RuntimeException("Failed to load configuration from invoice-parsing-template.json", e)
         }
     }
 
