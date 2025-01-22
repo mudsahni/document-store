@@ -23,9 +23,11 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import java.util.UUID
 import com.muditsahni.documentstore.model.entity.Collection
+import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import com.muditsahni.documentstore.util.CloudTasksHelper
+import org.springframework.beans.factory.annotation.Qualifier
 
 abstract class CollectionService(
     protected val eventStreamService: EventStreamService,
@@ -35,6 +37,7 @@ abstract class CollectionService(
     protected val documentParserProperties: DocumentParserProperties,
     protected val cloudTasksClient: CloudTasksClient,
     protected val storageService: StorageService,
+    @Qualifier("InvoicePromptTemplate") protected val invoiceParsingPromptTemplate: PromptTemplate,
     @Value("\${spring.application.name}") protected val applicationName: String,
     @Value("\${spring.cloud.gcp.project-number}") protected val projectNumber: String,
     @Value("\${gcp.project-id}") protected val gcpProjectId: String,

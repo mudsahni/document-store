@@ -1,0 +1,62 @@
+{ "prompt": "Please extract the invoice data from this document into the following structured JSON format and return only the json. Please add only the fields and values which are available in the PDF. There could be multiple line items in the invoice, ensure to extract and return them all. Don't worry about keeping the response short.",
+  "template": {
+    "invoice": {
+      "invoice_number": "string",
+      "billing_date": "string",
+      "due_date": "string",
+      "place_of_supply": "string",
+      "currency_code": "string",
+      "customer": {
+        "name": "string",
+        "billing_address": "string",
+        "shipping_address": "string",
+        "gst_number": "string",
+        "pan": "string"
+      },
+      "vendor": {
+        "name": "string",
+        "address": "string",
+        "gst_number": "string",
+        "pan": "string",
+        "upi_id": "string",
+        "bank_details": [{
+          "bank_name": "string",
+          "account_number": "string",
+          "branch": "string",
+          "branch_address": "string",
+          "ifsc": "string"
+        }]
+      },
+      "billed_amount": {
+        "sub_total": "number",
+        "previous_dues": "number",
+        "total": "number",
+        "balance_due": "number",
+        "amount_in_words": "string"
+      },
+      "line_items": [
+        {
+          "description": "string",
+          "hsn_sac": "string",
+          "quantity": {
+            "value": "number",
+            "unit": "string"
+          },
+          "rate": "number",
+          "amount": "number",
+          "discount": {
+            "percentage": "number",
+            "amount": "number"
+          },
+          "taxes": [
+            {
+              "category": "string",
+              "rate": "number",
+              "amount": "number"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

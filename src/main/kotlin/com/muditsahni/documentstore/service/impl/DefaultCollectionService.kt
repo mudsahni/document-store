@@ -13,6 +13,7 @@ import com.muditsahni.documentstore.model.cloudtasks.DocumentProcessingTask
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.Collection
+import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.entity.StorageEvent
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
@@ -29,6 +30,7 @@ import com.muditsahni.documentstore.util.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.util.UUID
@@ -45,6 +47,7 @@ class DefaultCollectionService(
     documentParserProperties: DocumentParserProperties,
     cloudTasksClient: CloudTasksClient,
     storageService: StorageService,
+    @Qualifier("InvoicePromptTemplate") invoiceParsingPromptTemplate: PromptTemplate,
     @Value("\${spring.application.name}") applicationName: String,
     @Value("\${spring.cloud.gcp.project-number}") projectNumber: String,
     @Value("\${gcp.project-id}") gcpProjectId: String,
@@ -60,6 +63,7 @@ class DefaultCollectionService(
     documentParserProperties,
     cloudTasksClient,
     storageService,
+    invoiceParsingPromptTemplate,
     applicationName,
     projectNumber,
     gcpProjectId,
@@ -154,6 +158,7 @@ class DefaultCollectionService(
             url = downloadableLink,
             type = DocumentType.INVOICE,
             fileType = FileType.PDF,
+            prompt = invoiceParsingPromptTemplate.prompt + "\n" + invoiceParsingPromptTemplate.template,
             callbackUrl = "https://${applicationName}-${projectNumber}." +
                     "${applicationRegion}.run.app/api/v1/tenants/${tenantId}/collections/" +
                     "${collectionId}/documents/${documentId}/process"

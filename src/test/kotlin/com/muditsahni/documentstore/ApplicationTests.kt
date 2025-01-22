@@ -7,6 +7,7 @@ import com.google.cloud.storage.Storage
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import kotlinx.coroutines.CoroutineScope
 import org.junit.jupiter.api.Test
@@ -44,6 +45,9 @@ class ApplicationTests {
 
 	@MockitoBean
 	lateinit var eventSink: Sinks.Many<ServerSentEvent<CollectionStatusEvent>>
+
+	@MockitoBean
+	lateinit var loadInvoiceParsingPromptTemplate: PromptTemplate
 
 	@Test
 	fun contextLoads() {

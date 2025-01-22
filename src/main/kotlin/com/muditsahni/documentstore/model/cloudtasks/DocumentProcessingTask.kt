@@ -17,6 +17,7 @@ data class DocumentProcessingTask(
     val fileType: FileType,
     val url: String,
     val name: String,
+    val prompt: String,
     @JsonProperty("callback_url")
     val callbackUrl: String
 )
