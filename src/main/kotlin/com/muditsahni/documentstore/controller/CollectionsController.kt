@@ -27,7 +27,6 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
 
 
 @RestController
@@ -97,6 +96,7 @@ class CollectionsController(
         // Check if user can view all collections
         val canViewAll = (userDetails.role == UserRole.ADMIN) ||
                 (userDetails.role == UserRole.POWER_USER)
+
         if (orgWide && !canViewAll) {
             logger.error { "User with Id ${userDetails.uid} does not have permission to view all collections" }
             throw IllegalStateException("User with Id ${userDetails.uid} does not have permission to view all collections")

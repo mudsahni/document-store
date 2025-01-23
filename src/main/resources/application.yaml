@@ -17,6 +17,10 @@ spring:
     filter:
       dispatcher-types: request,async
 
+cors:
+  allowed-origins:
+    - http://localhost:3000
+
 app:
   upload:
     max-files: 10
