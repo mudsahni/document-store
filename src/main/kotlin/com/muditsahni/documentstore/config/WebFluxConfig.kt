@@ -27,14 +27,18 @@ class WebFluxConfig(
         corsConfig.apply {
             allowedOrigins = this@WebFluxConfig.allowedOrigins
             allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            allowedHeaders = listOf("*")
+            allowedHeaders = listOf(
+                "Authorization",
+                "Content-Type",
+                "Accept",
+                "Origin"
+            )
             allowCredentials = true
-            exposedHeaders = listOf("Access-Control-Allow-Origin")
             maxAge = 3600L
         }
 
         val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/api/**", corsConfig)
+        source.registerCorsConfiguration("/**", corsConfig)
 
         return CorsWebFilter(source)
     }
