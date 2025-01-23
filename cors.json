@@ -1,0 +1,25 @@
+ [
+    {
+      "origin": ["http://localhost:3000"],
+      "method": ["GET", "PUT", "POST", "OPTIONS"],
+      "responseHeader": ["Content-Type", "x-goog-content-length-range", "Access-Control-Allow-Origin",
+	          "Access-Control-Allow-Headers",
+        "Origin",
+        "Accept",
+        "X-Requested-With",
+        "Content-Range",
+        "x-goog-content-length-range",
+        "x-goog-date",
+        "x-goog-credential",
+        "x-goog-expires",
+        "x-goog-algorithm",
+        "x-goog-signature",
+        "x-goog-signedheaders",
+        "Content-Length",
+        "Content-Disposition"
+	  ],
+      "maxAgeSeconds": 3600
+   }
+]
+
+

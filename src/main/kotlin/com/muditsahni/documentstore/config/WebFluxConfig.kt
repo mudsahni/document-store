@@ -29,6 +29,7 @@ class WebFluxConfig(
             allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
             allowedHeaders = listOf("*")
             allowCredentials = true
+            exposedHeaders = listOf("Access-Control-Allow-Origin")
             maxAge = 3600L
         }
 

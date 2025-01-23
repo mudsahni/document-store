@@ -7,6 +7,7 @@ import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.annotation.Order
 import org.springframework.core.convert.converter.Converter
+import org.springframework.http.HttpMethod
 import org.springframework.security.authentication.AbstractAuthenticationToken
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder
@@ -69,6 +70,7 @@ class SecurityConfig(
 //            .securityMatcher(PathPatternParserServerWebExchangeMatcher("/api/v1/tenants/*/collections/*/documents/*/process")) // Only for callback endpoints
             .securityMatcher(combinedMatcher)
             .authorizeExchange { auth ->
+                auth.pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 auth.anyExchange()
                     .hasAnyAuthority(
                         SERVICE_ACCOUNT_AUTHORITY,
@@ -109,6 +111,7 @@ class SecurityConfig(
             )
             .authorizeExchange { auth ->
                 auth
+                    .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                     .pathMatchers(*SecurityPath.publicPaths().toTypedArray()).permitAll()
                     .anyExchange()
                     .hasRole(UserRole.ADMIN.value.uppercase())

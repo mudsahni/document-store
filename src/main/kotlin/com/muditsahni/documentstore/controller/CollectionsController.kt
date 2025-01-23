@@ -129,18 +129,25 @@ class CollectionsController(
         @AuthenticationPrincipal firebaseUserDetails: FirebaseUserDetails
     ): ResponseEntity<CreateCollectionResponse> {
 
-        logger.info { "Create collection call received" }
+        try {
+            logger.info { "Create collection call received" }
 
-        request.files.forEach { it -> validateFile(it.key, it.value) }
+            request.files.forEach { it -> validateFile(it.key, it.value) }
 
-        // Create collection
-        return ResponseEntity.ok(collectionsService.createCollection(
-            firebaseUserDetails.uid,
-            firebaseUserDetails.tenant,
-            request.name,
-            request.type,
-            request.files,
-        ))
+            // Create collection
+            return ResponseEntity.ok(
+                collectionsService.createCollection(
+                    firebaseUserDetails.uid,
+                    firebaseUserDetails.tenant,
+                    request.name,
+                    request.type,
+                    request.files,
+                )
+            )
+        } catch (e: Exception) {
+            logger.error(e) { "Error creating collection" }
+            throw e
+        }
     }
 
     @PostMapping("/{collectionId}/documents/{documentId}/process")

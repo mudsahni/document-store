@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
+import org.springframework.web.server.ServerWebInputException
 import java.time.LocalDateTime
 
 @RestControllerAdvice
@@ -72,6 +73,17 @@ class GlobalExceptionHandler {
             ))
     }
 
+    @ExceptionHandler(ServerWebInputException::class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    fun handleServerWebInputException(e: ServerWebInputException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(ErrorResponse(
+                status = HttpStatus.BAD_REQUEST.value(),
+                message = "Invalid request body: ${e.message}", // Or customize the message as needed
+                timestamp = LocalDateTime.now()
+            ))
+    }
 
 }
 
