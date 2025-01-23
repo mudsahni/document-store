@@ -1,4 +1,4 @@
-package com.muditsahni.documentstore.model.dto.response
+package com.muditsahni.documentstore.model.event
 
 import com.google.cloud.Timestamp
 import com.muditsahni.documentstore.model.enum.DocumentStatus

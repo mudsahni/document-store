@@ -20,6 +20,7 @@ spring:
 cors:
   allowed-origins:
     - http://localhost:3000
+    - https://invoice-store-front-end-741672280176.asia-south2.run.app
 
 app:
   upload:
