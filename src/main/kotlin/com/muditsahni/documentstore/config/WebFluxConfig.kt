@@ -25,13 +25,17 @@ class WebFluxConfig(
     fun corsWebFilter(): CorsWebFilter {
         val corsConfig = CorsConfiguration()
         corsConfig.apply {
-            allowedOrigins = this@WebFluxConfig.allowedOrigins
+            // Use allowedOriginPatterns instead of allowedOrigins
+            allowedOriginPatterns = listOf("https://*.asia-south2.run.app")
+
             allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
             allowedHeaders = listOf(
                 "Authorization",
                 "Content-Type",
                 "Accept",
-                "Origin"
+                "Origin",
+                "Access-Control-Request-Method",
+                "Access-Control-Request-Headers"
             )
             allowCredentials = true
             maxAge = 3600L
