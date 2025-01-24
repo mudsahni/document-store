@@ -6,7 +6,7 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.reactive.CorsWebFilter
+import org.springframework.web.cors.reactive.CorsConfigurationSource
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import reactor.core.publisher.Sinks
 
@@ -21,30 +21,30 @@ class WebFluxConfig(
         return Sinks.many().multicast().onBackpressureBuffer()
     }
 
-    @Bean
-    fun corsWebFilter(): CorsWebFilter {
-        val corsConfig = CorsConfiguration()
-        corsConfig.apply {
-            // Use allowedOriginPatterns instead of allowedOrigins
-            allowedOriginPatterns = listOf("https://*.asia-south2.run.app")
+    @Configuration
+    class CorsConfig {
+        @Bean
+        fun corsConfigurationSource(): CorsConfigurationSource {
+            val configuration = CorsConfiguration().apply {
+                allowedOriginPatterns = listOf("https://*.asia-south2.run.app")
+                allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                allowedHeaders = listOf(
+                    "Authorization",
+                    "Content-Type",
+                    "Accept",
+                    "Origin",
+                    "Access-Control-Request-Method",
+                    "Access-Control-Request-Headers"
+                )
+                allowCredentials = true
+                maxAge = 3600L
+            }
 
-            allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
-            allowedHeaders = listOf(
-                "Authorization",
-                "Content-Type",
-                "Accept",
-                "Origin",
-                "Access-Control-Request-Method",
-                "Access-Control-Request-Headers"
-            )
-            allowCredentials = true
-            maxAge = 3600L
+            val source = UrlBasedCorsConfigurationSource()
+            source.registerCorsConfiguration("/**", configuration)
+            return source
         }
-
-        val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", corsConfig)
-
-        return CorsWebFilter(source)
     }
+
 
 }
