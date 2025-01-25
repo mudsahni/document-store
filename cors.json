@@ -1,25 +1,8 @@
- [
-    {
-      "origin": ["http://localhost:3000"],
-      "method": ["GET", "PUT", "POST", "OPTIONS"],
-      "responseHeader": ["Content-Type", "x-goog-content-length-range", "Access-Control-Allow-Origin",
-	          "Access-Control-Allow-Headers",
-        "Origin",
-        "Accept",
-        "X-Requested-With",
-        "Content-Range",
-        "x-goog-content-length-range",
-        "x-goog-date",
-        "x-goog-credential",
-        "x-goog-expires",
-        "x-goog-algorithm",
-        "x-goog-signature",
-        "x-goog-signedheaders",
-        "Content-Length",
-        "Content-Disposition"
-	  ],
-      "maxAgeSeconds": 3600
-   }
+[
+  {
+    "origin": ["https://invoice-store-front-end-741672280176.asia-south2.run.app"],
+    "method": ["PUT", "GET", "HEAD", "DELETE", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
+  }
 ]
-
-

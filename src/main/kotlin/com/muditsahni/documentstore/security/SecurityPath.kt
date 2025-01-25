@@ -3,7 +3,7 @@ package com.muditsahni.documentstore.security
 enum class SecurityPath(val pattern: String) {
     API("/api/**"),
     PROCESS_CALLBACK("/api/v1/tenants/*/collections/*/documents/*/process"),
-    SSE("/api/v1/tenants/*/collections/*/documents/*/sse"),
+    SSE("/api/v1/tenants/*/collections/*/sse"),
     HEALTH("/health"),
     DEV_TOKEN("/dev/token"),
     SWAGGER_UI("/swagger-ui/**"),
