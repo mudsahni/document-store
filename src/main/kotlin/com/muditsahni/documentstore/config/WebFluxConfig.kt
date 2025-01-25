@@ -34,7 +34,9 @@ class WebFluxConfig(
                     "Accept",
                     "Origin",
                     "Access-Control-Request-Method",
-                    "Access-Control-Request-Headers"
+                    "Access-Control-Request-Headers",
+                    "Cache-Control",
+                    "Connection"
                 )
                 allowCredentials = true
                 maxAge = 3600L
