@@ -13,6 +13,8 @@ import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.entity.StorageEvent
+import com.muditsahni.documentstore.model.entity.document.Document
+import com.muditsahni.documentstore.model.entity.document.StructuredData
 import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
@@ -25,6 +27,7 @@ import com.muditsahni.documentstore.util.DocumentHelper
 import com.muditsahni.documentstore.util.UserHelper
 import com.muditsahni.documentstore.util.await
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
@@ -192,8 +195,7 @@ class DefaultCollectionService(
         tenant: Tenant,
         collectionId: String,
         processDocumentCallbackRequest: ProcessDocumentCallbackRequest
-    ) {
-
+    ): Document = coroutineScope {
         try {
             // get processed document
 
@@ -207,29 +209,45 @@ class DefaultCollectionService(
                 )
             } else {
                 document.status = DocumentStatus.PARSED
-                document.parsedData = objectMapper.readValue<InvoiceWrapper>(processDocumentCallbackRequest.parsedData,
-                    InvoiceWrapper::class.java
+                document.data = StructuredData(
+                    raw = processDocumentCallbackRequest.parsedData,
+                    structured = null
                 )
             }
 
+            DocumentHelper.saveDocument(
+                firestore,
+                tenant,
+                document
+            )
+
+            // update collection
+            CollectionHelper.updateCollectionDocuments(
+                firestore,
+                tenant,
+                collectionId,
+                processDocumentCallbackRequest.id,
+                document.status
+            )
+
+
+
             scope.launch {
+
+                document.data?.structured = objectMapper.readValue<InvoiceWrapper>(processDocumentCallbackRequest.parsedData,
+                    InvoiceWrapper::class.java
+                )
+
                 DocumentHelper.saveDocument(
                     firestore,
                     tenant,
                     document
                 )
 
-                // update collection
-                CollectionHelper.updateCollectionDocuments(
-                    firestore,
-                    tenant,
-                    collectionId,
-                    processDocumentCallbackRequest.id,
-                    document.status
-                )
             }
             // emit event
             eventStreamService.completeStream(collectionId)
+            document
         } catch (e: Exception) {
             logger.error(e) { "Error processing document callback" }
             // You might want to emit an error event here

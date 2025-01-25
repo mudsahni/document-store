@@ -16,7 +16,7 @@ data class Document(
     val type: DocumentType,
     val collectionId: String,
     var status: DocumentStatus = DocumentStatus.PENDING,
-    var parsedData: InvoiceWrapper? = null,
+    var data: StructuredData? = null,
     var private: Boolean,
     var error: DocumentError? = null,
     var permissions: MutableMap<String, DocumentRole> = mutableMapOf(),
@@ -29,6 +29,11 @@ data class Document(
 data class ClientDetails(
     val model: String,
     val client: AIClient
+)
+
+data class StructuredData(
+    var raw: String? = null,
+    var structured: InvoiceWrapper? = null,
 )
 
 data class ParsedDataMetadata(
@@ -54,7 +59,7 @@ fun DocumentSnapshot.toDocument(): Document {
         status = DocumentStatus.fromString(
             getString("status") ?: throw IllegalStateException("Document status not found")
         ),
-        parsedData = get("parsedData") as InvoiceWrapper?,
+        data = get("data") as StructuredData?,
 //        parsedData = get("parsedData") as ParsedData?,
 //        parsedData = getString("parsedData"),
         private = getBoolean("private") ?: throw IllegalStateException("Document private not found"),
