@@ -78,7 +78,7 @@ object DocumentHelper {
             type = type,
             status = status,
             collectionId = collectionId,
-            parsedData = null,
+            data = null,
             private = false,
             createdBy = tenant.tenantId,
             createdAt = System.currentTimeMillis(),
