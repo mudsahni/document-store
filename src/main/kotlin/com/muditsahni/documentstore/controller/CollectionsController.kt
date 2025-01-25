@@ -21,6 +21,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
+import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -30,6 +31,7 @@ import reactor.core.publisher.Flux
 
 
 @RestController
+@CrossOrigin // Add this annotation
 @RequestMapping("/api/v1/tenants/{tenantId}/collections")
 @Tag(name = "Document Upload", description = "Endpoints for document upload and processing")
 @SecurityRequirement(name = "firebase")
@@ -44,7 +46,7 @@ class CollectionsController(
         }
     }
 
-    @GetMapping("/{collectionId}/sse")
+    @GetMapping("/{collectionId}/sse", produces = [MediaType.TEXT_EVENT_STREAM_VALUE])
     fun subscribeToCollectionEvents(
         @PathVariable tenantId: String,
         @PathVariable collectionId: String
