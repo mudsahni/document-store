@@ -78,8 +78,13 @@ data class LineItem(
     val quantity: Quantity? = null,
     val rate: Double? = null,
     val amount: Double? = null,
-    val discount: Double? = null,
+    val discount: Discount? = null,
     val taxes: List<Tax> = emptyList()
+)
+
+data class Discount(
+    val percentage: Double? = null,
+    val amount: Double? = null
 )
 
 data class Quantity(
