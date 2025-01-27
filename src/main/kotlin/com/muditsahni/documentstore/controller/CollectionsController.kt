@@ -51,8 +51,14 @@ class CollectionsController(
         @PathVariable tenantId: String,
         @PathVariable collectionId: String
     ): Flux<ServerSentEvent<CollectionStatusEvent>>  {
+        logger.info("SSE connection attempt for collection: $collectionId")
 
         return eventStreamService.getEventStream(collectionId)
+            .doOnSubscribe { logger.info("Client subscribed to collection: $collectionId") }
+            .doOnCancel { logger.info("Client cancelled subscription for collection: $collectionId") }
+            .doOnError { error ->
+                logger.error("Error in SSE stream for collection: $collectionId", error)
+            }
     }
 
     @PostMapping("/{collectionId}/upload")

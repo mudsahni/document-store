@@ -4,5 +4,11 @@
     "method": ["PUT", "GET", "HEAD", "DELETE", "OPTIONS"],
     "responseHeader": ["Content-Type", "Authorization"],
     "maxAgeSeconds": 3600
+  },
+  {
+    "origin": ["*"],
+    "method": ["PUT", "GET", "HEAD", "DELETE", "OPTIONS"],
+    "responseHeader": ["Content-Type", "Authorization"],
+    "maxAgeSeconds": 3600
   }
 ]

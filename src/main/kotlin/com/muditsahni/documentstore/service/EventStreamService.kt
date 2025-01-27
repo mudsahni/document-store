@@ -31,6 +31,10 @@ class EventStreamService {
     }
 
     fun getEventStream(processId: String): Flux<ServerSentEvent<CollectionStatusEvent>> {
+        // Check if stream exists
+        val streamExists = processStreams.containsKey(processId)
+        logger.info("Stream exists for $processId: $streamExists")
+
         return processStreams[processId]?.asFlux()
             ?: throw IllegalStateException("No active process found for: $processId")
     }

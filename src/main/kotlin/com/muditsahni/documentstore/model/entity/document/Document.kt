@@ -1,6 +1,7 @@
 package com.muditsahni.documentstore.model.entity.document
 
 import com.google.cloud.firestore.DocumentSnapshot
+import com.muditsahni.documentstore.config.getObjectMapper
 import com.muditsahni.documentstore.exception.DocumentError
 import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.enum.AIClient
@@ -50,6 +51,19 @@ data class ParsedData(
 )
 
 fun DocumentSnapshot.toDocument(): Document {
+    val objectMapper = getObjectMapper()
+    val dataMap = get("data") as? HashMap<String, Any?>
+        ?: throw IllegalStateException("Document data not found")
+
+    val structuredData = try {
+        // Convert HashMap to JSON string first
+        val jsonString = objectMapper.writeValueAsString(dataMap)
+        // Then parse JSON to StructuredData
+        objectMapper.readValue(jsonString, StructuredData::class.java)
+    } catch (e: Exception) {
+        throw IllegalStateException("Failed to parse structured data: ${e.message}")
+    }
+
     return Document(
         id = id,
         name = getString("name") ?: throw IllegalStateException("Document name not found"),
@@ -59,7 +73,7 @@ fun DocumentSnapshot.toDocument(): Document {
         status = DocumentStatus.fromString(
             getString("status") ?: throw IllegalStateException("Document status not found")
         ),
-        data = get("data") as StructuredData?,
+        data = structuredData,
 //        parsedData = get("parsedData") as ParsedData?,
 //        parsedData = getString("parsedData"),
         private = getBoolean("private") ?: throw IllegalStateException("Document private not found"),

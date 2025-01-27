@@ -21,7 +21,7 @@ enum class SecurityPath(val pattern: String) {
 
         fun jwtAuthPaths() = listOf(
             PROCESS_CALLBACK,
-            SSE
+//            SSE
 
         ).map { it.pattern }
 
@@ -33,7 +33,7 @@ enum class SecurityPath(val pattern: String) {
 
         fun firebaseBypassPaths() = setOf(
             PROCESS_CALLBACK,
-            SSE
+//            SSE
         ).map { it.pattern.toRegexPattern() }
     }
 }

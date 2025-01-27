@@ -69,8 +69,9 @@ fun Collection.toGetCollectionResponse(): GetCollectionResponse {
         id = this.id,
         name = this.name,
         type = this.type,
-        documents = this.documents.keys.toList(),
+        documents = this.documents,
         createdAt = this.createdAt,
-        updatedAt = this.updatedAt
+        updatedAt = this.updatedAt,
+        updatedBy = this.updatedBy
     )
 }
