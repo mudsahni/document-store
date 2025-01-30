@@ -61,21 +61,19 @@ abstract class CollectionService(
     }
 
     fun emitCollectionStatusEvent(collection: Collection) {
-        scope.launch {
-            try {
-                eventStreamService.emitEvent(collection.toCollectionStatusEvent())
-            } catch (e: Exception) {
-                eventStreamService.errorStream(
-                    CollectionStatusEvent(
-                        id = collection.id,
-                        name = collection.name,
-                        status = CollectionStatus.FAILED,
-                        type = collection.type,
-                        error = MajorErrorCode.toCollectionError(MajorErrorCode.GEN_MAJ_EVT_001)
-                    )
+        try {
+            eventStreamService.emitEvent(collection.toCollectionStatusEvent())
+        } catch (e: Exception) {
+            eventStreamService.errorStream(
+                CollectionStatusEvent(
+                    id = collection.id,
+                    name = collection.name,
+                    status = CollectionStatus.FAILED,
+                    type = collection.type,
+                    error = MajorErrorCode.toCollectionError(MajorErrorCode.GEN_MAJ_EVT_001)
                 )
-                logger.error("Error while creating collection status events stream", e)
-            }
+            )
+            logger.error("Error while creating collection status events stream", e)
         }
     }
 

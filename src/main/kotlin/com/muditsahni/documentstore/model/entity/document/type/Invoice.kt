@@ -97,7 +97,8 @@ enum class TaxCategory(val value: String) {
     CGST("CGST"),
     SGST("SGST"),
     IGST("IGST"),
-    CESS("CESS")
+    CESS("CESS"),
+    GST("GST")
 }
 
 data class Tax(
