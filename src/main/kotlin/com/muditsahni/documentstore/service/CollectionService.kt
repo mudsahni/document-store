@@ -216,8 +216,8 @@ abstract class CollectionService(
 
         collection.documents[documentId] = DocumentStatus.UPLOADED
 
-        val notUploadedDocumentCount = collection.documents.count { it.value == DocumentStatus.UPLOADED }
-        if (notUploadedDocumentCount == collection.documents.size) {
+        val uploadedDocumentCount = collection.documents.count { it.value == DocumentStatus.UPLOADED }
+        if (uploadedDocumentCount == collection.documents.size) {
             logger.info("All documents uploaded for collection: $collectionId")
             collection.status = CollectionStatus.DOCUMENTS_UPLOAD_COMPLETE
         }

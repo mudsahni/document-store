@@ -194,7 +194,7 @@ class DefaultCollectionService(
                     "tenants/$tenantId/collections",
                     collectionId,
                     mapOf(
-                        "documents" to FieldUpdate.MapUpdate(documentId, DocumentStatus.UPLOADED),
+                        "documents" to FieldUpdate.Set(collection.documents),
                         "status" to FieldUpdate.Set(collection.status)
                     )
                 ),
@@ -224,7 +224,7 @@ class DefaultCollectionService(
         logger.info("Emitting collection status event for collection $collectionId")
         emitCollectionStatusEvent(collection)
 
-        logger.info("Processing document: ${documentId}")
+        logger.info("Initiating document parsing for document: ${documentId}")
         processDocument(tenantId, collectionId, documentId, fileName)
     }
 
