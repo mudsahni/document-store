@@ -455,6 +455,8 @@ class DefaultCollectionService(
             }
 
             logger.info("Emitting collection status event for collection $collectionId")
+            emitCollectionStatusEvent(collection)
+            eventStreamService.completeStream(collectionId)
             document
         } catch (e: Exception) {
             logger.error(e) { "Error processing document callback. Error: ${e.message}" }
