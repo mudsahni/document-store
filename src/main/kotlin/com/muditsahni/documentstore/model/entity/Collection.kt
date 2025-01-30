@@ -52,7 +52,7 @@ fun Collection.toCollectionStatusEvent(): CollectionStatusEvent {
     )
 }
 
-fun Collection.toCreateCollectionReponse(documents: Map<String, SignedUrlResponse>): CreateCollectionResponse {
+fun Collection.toCreateCollectionReponse(documents: Map<String, SignedUrlResponse?>): CreateCollectionResponse {
     return CreateCollectionResponse(
         id = this.id,
         name = this.name,

@@ -61,34 +61,34 @@ class CollectionsController(
             }
     }
 
-    @PostMapping("/{collectionId}/upload")
-    suspend fun uploadCallback(
-        @PathVariable tenantId: String,
-        @PathVariable collectionId: String,
-        @RequestBody request: UploadCallbackRequest,
-        @AuthenticationPrincipal jwt: Jwt
-    ): ResponseEntity<String> {
-
-        logger.info("Upload callback received for collection $collectionId and document ${request.documentId}")
-        val documentError = if (request.error != null) {
-            DocumentError(request.error, DocumentErrorType.DOCUMENT_UPLOAD_ERROR)
-        } else {
-            null
-        }
-        val documentStatus = if (request.status == UploadStatus.SUCCESS) { DocumentStatus.UPLOADED } else {  DocumentStatus.ERROR }
-
-        collectionsService.updateDocumentCollectionAndUserWithUploadedDocumentStatus(
-            request.userId,
-            Tenant.fromTenantId(tenantId),
-            collectionId,
-            request.uploadPath,
-            request.documentId,
-            documentStatus,
-            documentError,
-        )
-
-        return ResponseEntity.ok("Upload callback completed.")
-    }
+//    @PostMapping("/{collectionId}/upload")
+//    suspend fun uploadCallback(
+//        @PathVariable tenantId: String,
+//        @PathVariable collectionId: String,
+//        @RequestBody request: UploadCallbackRequest,
+//        @AuthenticationPrincipal jwt: Jwt
+//    ): ResponseEntity<String> {
+//
+//        logger.info("Upload callback received for collection $collectionId and document ${request.documentId}")
+//        val documentError = if (request.error != null) {
+//            DocumentError(request.error, DocumentErrorType.DOCUMENT_UPLOAD_ERROR)
+//        } else {
+//            null
+//        }
+//        val documentStatus = if (request.status == UploadStatus.SUCCESS) { DocumentStatus.UPLOADED } else {  DocumentStatus.ERROR }
+//
+//        collectionsService.updateDocumentCollectionAndUserWithUploadedDocumentStatus(
+//            request.userId,
+//            Tenant.fromTenantId(tenantId),
+//            collectionId,
+//            request.uploadPath,
+//            request.documentId,
+//            documentStatus,
+//            documentError,
+//        )
+//
+//        return ResponseEntity.ok("Upload callback completed.")
+//    }
 
     @GetMapping
     suspend fun getAll(
@@ -144,7 +144,7 @@ class CollectionsController(
 
             // Create collection
             return ResponseEntity.ok(
-                collectionsService.createCollection(
+                collectionsService.createCollectionAndDocuments(
                     firebaseUserDetails.uid,
                     firebaseUserDetails.tenant,
                     request.name,

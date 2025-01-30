@@ -1,6 +1,7 @@
 package com.muditsahni.documentstore.util
 
 import com.google.cloud.firestore.Firestore
+import com.muditsahni.documentstore.exception.MajorErrorCode
 import com.muditsahni.documentstore.exception.throwable.DocumentNotFoundException
 import com.muditsahni.documentstore.model.entity.document.Document
 import com.muditsahni.documentstore.model.entity.SYSTEM_USER
@@ -33,7 +34,7 @@ object DocumentHelper {
                 .await()
 
             if (!documentRef.exists()) {
-                throw DocumentNotFoundException("Document with id $documentId not found")
+                throw DocumentNotFoundException(MajorErrorCode.GEN_MAJ_DOC_003.code, MajorErrorCode.GEN_MAJ_DOC_003.message)
             }
 
             logger.info("Document fetched from Firestore")

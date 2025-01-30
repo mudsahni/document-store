@@ -1,6 +1,9 @@
 package com.muditsahni.documentstore.exception
 
+import com.muditsahni.documentstore.exception.throwable.CollectionCreationError
+import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundException
 import com.muditsahni.documentstore.exception.throwable.ResourceNotFoundException
+import com.muditsahni.documentstore.respository.DocumentNotFoundException
 import okio.FileNotFoundException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,9 +22,8 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.FORBIDDEN)
             .body(ErrorResponse(
-                status = HttpStatus.FORBIDDEN.value(),
-                message = e.message ?: "Access denied - missing tenant information",
-                timestamp = LocalDateTime.now()
+                code = MajorErrorCode.GEN_MAJ_AUTH_002.code,
+                message = MajorErrorCode.GEN_MAJ_AUTH_002.message
             ))
     }
 
@@ -31,9 +33,8 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(
-                status = HttpStatus.BAD_REQUEST.value(),
-                message = e.message ?: "Invalid request parameters",
-                timestamp = LocalDateTime.now()
+                code = MajorErrorCode.GEN_MAJ_REQ_001.code,
+                message = MajorErrorCode.GEN_MAJ_REQ_001.message
             ))
     }
 
@@ -43,23 +44,44 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ErrorResponse(
-                status = HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                message = "An unexpected error occurred",
-                timestamp = LocalDateTime.now()
+                code = MajorErrorCode.GEN_MAJ_UNK_001.code,
+                message = MajorErrorCode.GEN_MAJ_UNK_001.message
             ))
     }
 
     @ExceptionHandler(ResourceNotFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
-    fun handleDocumentNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
+    fun handleResourceNotFoundException(ex: ResourceNotFoundException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(ErrorResponse(
-                status = HttpStatus.NOT_FOUND.value(),
-                message = ex.message ?: "Resource not found",
-                timestamp = LocalDateTime.now()
+                code = MajorErrorCode.GEN_MAJ_RES_001.code,
+                message = MajorErrorCode.GEN_MAJ_RES_001.message
             ))
     }
+
+    @ExceptionHandler(CollectionNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleCollectionNotFoundException(ex: CollectionNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(
+                code = MajorErrorCode.GEN_MAJ_COL_003.code,
+                message = MajorErrorCode.GEN_MAJ_COL_003.message
+            ))
+    }
+
+    @ExceptionHandler(DocumentNotFoundException::class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    fun handleDocumentNotFoundException(ex: DocumentNotFoundException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ErrorResponse(
+                code = MajorErrorCode.GEN_MAJ_DOC_003.code,
+                message = MajorErrorCode.GEN_MAJ_DOC_003.message
+            ))
+    }
+
 
     @ExceptionHandler(FileNotFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
@@ -67,9 +89,8 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.NOT_FOUND)
             .body(ErrorResponse(
-                status = HttpStatus.NOT_FOUND.value(),
-                message = ex.message ?: "Resource not found",
-                timestamp = LocalDateTime.now()
+                code = MajorErrorCode.GEN_MAJ_RES_001.code,
+                message = MajorErrorCode.GEN_MAJ_RES_001.message
             ))
     }
 
@@ -79,16 +100,20 @@ class GlobalExceptionHandler {
         return ResponseEntity
             .status(HttpStatus.BAD_REQUEST)
             .body(ErrorResponse(
-                status = HttpStatus.BAD_REQUEST.value(),
-                message = "Invalid request body: ${e.message}", // Or customize the message as needed
-                timestamp = LocalDateTime.now()
+                code = MajorErrorCode.GEN_MAJ_REQ_001.code,
+                message = MajorErrorCode.GEN_MAJ_REQ_001.message
+            ))
+    }
+
+    @ExceptionHandler(CollectionCreationError::class)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+    fun handleCollectionCreationError(e: CollectionCreationError): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            .body(ErrorResponse(
+                code = MajorErrorCode.GEN_MAJ_COL_001.code,
+                message = MajorErrorCode.GEN_MAJ_COL_001.message
             ))
     }
 
 }
-
-data class ErrorResponse(
-    val status: Int,
-    val message: String,
-    val timestamp: LocalDateTime
-)

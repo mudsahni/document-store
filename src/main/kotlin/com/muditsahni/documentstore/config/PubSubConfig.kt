@@ -57,10 +57,10 @@ class PubSubConfig(
 
                     logger.info("Received storage notification for file: ${event.name}")
                     // Extract tenant and collection IDs from path
+                    consumer.ack()
 
                     // Process the uploaded file
                     collectionsService.processStorageEvent(event)
-                    consumer.ack()
                 } catch (e: Exception) {
                     logger.error("Error processing message: ${e.message}")
                     consumer.nack()

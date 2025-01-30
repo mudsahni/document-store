@@ -53,15 +53,13 @@ data class ParsedData(
 fun DocumentSnapshot.toDocument(): Document {
     val objectMapper = getObjectMapper()
     val dataMap = get("data") as? HashMap<String, Any?>
-        ?: throw IllegalStateException("Document data not found")
-
-    val structuredData = try {
-        // Convert HashMap to JSON string first
-        val jsonString = objectMapper.writeValueAsString(dataMap)
-        // Then parse JSON to StructuredData
-        objectMapper.readValue(jsonString, StructuredData::class.java)
-    } catch (e: Exception) {
-        throw IllegalStateException("Failed to parse structured data: ${e.message}")
+    val structuredData = dataMap?.let { map ->
+        try {
+            val jsonString = objectMapper.writeValueAsString(map)
+            objectMapper.readValue(jsonString, StructuredData::class.java)
+        } catch (e: Exception) {
+            throw IllegalStateException("Failed to parse structured data: ${e.message}")
+        }
     }
 
     return Document(

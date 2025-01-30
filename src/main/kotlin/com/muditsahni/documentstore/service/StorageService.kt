@@ -31,30 +31,23 @@ class StorageService(
         contentType: String,
     ): SignedUrlResponse {
         logger.info("Generating signed URL for document upload")
+        val bucket = storageClient.get(bucketName)
+        val blobId = BlobId.of(bucketName, "${path}/${filename}")
+        val blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build()
 
-        try {
-            val bucket = storageClient.get(bucketName)
-            val blobId = BlobId.of(bucketName, "${path}/${filename}")
-            val blobInfo = BlobInfo.newBuilder(blobId).setContentType(contentType).build()
+        val signedUrl = storageClient.signUrl(
+            blobInfo,
+            15, // URL valid for 15 minutes
+            TimeUnit.MINUTES,
+            Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
+            Storage.SignUrlOption.withV4Signature()
+        )
 
-            val signedUrl = storageClient.signUrl(
-                blobInfo,
-                15, // URL valid for 15 minutes
-                TimeUnit.MINUTES,
-                Storage.SignUrlOption.httpMethod(HttpMethod.PUT),
-                Storage.SignUrlOption.withV4Signature()
-            )
-
-            return SignedUrlResponse(
-                uploadUrl = signedUrl.toString(),
-                fileName = filename,
-                documentId = documentId
-            )
-        } catch (e: Exception) {
-            logger.error("Failed to generate signed URL: ${e.message}")
-            throw e
-        }
-
+        return SignedUrlResponse(
+            uploadUrl = signedUrl.toString(),
+            fileName = filename,
+            documentId = documentId
+        )
     }
 
     suspend fun getFileUrl(tenantId: String, collectionId: String, documentId: String, fileName: String): String {

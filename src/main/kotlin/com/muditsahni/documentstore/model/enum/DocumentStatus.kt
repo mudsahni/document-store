@@ -7,6 +7,7 @@ enum class DocumentStatus(val value: String) {
     IN_PROGRESS("in_progress"),
     PENDING("pending"),
     PARSED("parsed"),
+    STRUCTURED("structured"),
     VALIDATED("validated"),
     ERROR("error"),
     APPROVED("approved");

@@ -2,6 +2,7 @@ package com.muditsahni.documentstore.util
 
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.Firestore
+import com.muditsahni.documentstore.exception.MajorErrorCode
 import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundException
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
@@ -11,6 +12,7 @@ import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.DocumentStatus
 import com.muditsahni.documentstore.model.enum.DocumentType
+import com.muditsahni.documentstore.service.EventStreamService
 import com.muditsahni.documentstore.service.StorageService
 
 import mu.KotlinLogging
@@ -36,7 +38,7 @@ object CollectionHelper {
             .await()
 
         if (!collectionRef.exists()) {
-            throw CollectionNotFoundException("Collection with id $collectionId not found")
+            throw CollectionNotFoundException(MajorErrorCode.GEN_MAJ_COL_003.code, MajorErrorCode.GEN_MAJ_COL_003.message)
         }
 
         logger.info("Collection fetched from Firestore")
@@ -84,7 +86,8 @@ object CollectionHelper {
         tenant: Tenant,
         collectionId: String,
         documentId: String,
-        documentStatus: DocumentStatus
+        documentStatus: DocumentStatus,
+        eventService: EventStreamService? = null
     ): Collection {
 
         val collection = getCollection(firestore, collectionId, tenant)
@@ -93,16 +96,19 @@ object CollectionHelper {
             collection.status = CollectionStatus.IN_PROGRESS
         }
 
-
+        collection.documents[documentId] = documentStatus
 
         if (collection.status == CollectionStatus.IN_PROGRESS) {
+            val inProgressDocuments = collection.documents.count { it.value == DocumentStatus.IN_PROGRESS }
+            if (inProgressDocuments == collection.documents.size) {
+                eventService?.completeStream(collectionId)
+            }
             val notPendingDocuments = collection.documents.count { it.value != DocumentStatus.PENDING }
             if (notPendingDocuments == 0 || notPendingDocuments+1 == collection.documents.size) {
                 collection.status = CollectionStatus.DOCUMENTS_UPLOAD_COMPLETE
             }
         }
 
-        collection.documents[documentId] = documentStatus
         collection.updatedAt = Timestamp.now()
         collection.updatedBy = SYSTEM_USER
 

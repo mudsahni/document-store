@@ -12,6 +12,6 @@ data class CreateCollectionResponse(
     val name: String,
     val status: CollectionStatus,
     val type: CollectionType,
-    val documents: Map<String, SignedUrlResponse> = mapOf(),
+    val documents: Map<String, SignedUrlResponse?> = mapOf(),
     val error: CollectionError? = null,
 )

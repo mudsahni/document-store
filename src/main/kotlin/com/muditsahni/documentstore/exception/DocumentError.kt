@@ -5,5 +5,5 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DocumentError(
     val message: String,
-    val type: DocumentErrorType
+    val code: String
 )
