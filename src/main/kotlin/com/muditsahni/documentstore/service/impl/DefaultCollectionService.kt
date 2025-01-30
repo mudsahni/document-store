@@ -440,7 +440,11 @@ class DefaultCollectionService(
 
             val collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
 
+            logger.info("This is the collection as json: ${objectMapper.writeValueAsString(collection)}")
+
             val areAllDocumentsStructured = collection.documents.values.all { it == DocumentStatus.STRUCTURED }
+
+            logger.info("Checking if all documents are structured for collection: $collectionId")
             if (areAllDocumentsStructured) {
                 collection.status = CollectionStatus.COMPLETED
                 CollectionHelper.saveCollection(firestore, tenant, collection)
