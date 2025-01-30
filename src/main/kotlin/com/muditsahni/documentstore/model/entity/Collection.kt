@@ -26,13 +26,19 @@ data class Collection(
 )
 
 fun DocumentSnapshot.toCollection(): Collection {
+    val rawDocuments = get("documents") as? Map<String, String>
+        ?: throw IllegalStateException("Collection documents not found")
+    val convertedDocuments = rawDocuments.mapValues { (_, status) ->
+        DocumentStatus.fromString(status)
+    }.toMutableMap()
+
     return Collection(
         id = id,
         name = getString("name") ?: throw IllegalStateException("Collection name not found"),
         type = CollectionType.fromString(getString("type") ?: throw IllegalStateException("Collection type not found")),
         status = CollectionStatus.fromString(getString("status") ?: throw IllegalStateException("Collection status not found")),
         // TODO: Find a good way to do this
-        documents = get("documents") as MutableMap<String, DocumentStatus>,
+        documents = convertedDocuments,
         createdBy = getString("createdBy") ?: throw IllegalStateException("Collection createdBy not found"),
         createdAt = getTimestamp("createdAt") ?: throw IllegalStateException("Collection createdAt not found"),
         updatedBy = getString("updatedBy"),

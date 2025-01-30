@@ -438,7 +438,7 @@ class DefaultCollectionService(
 
             logger.info("Completed processing document: ${processDocumentCallbackRequest.id}")
 
-            val collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
+            val collection: Collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
 
             logger.info("This is the collection as json: ${objectMapper.writeValueAsString(collection)}")
 
