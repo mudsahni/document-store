@@ -26,7 +26,7 @@ class WebFluxConfig(
         @Bean
         fun corsConfigurationSource(): CorsConfigurationSource {
             val configuration = CorsConfiguration().apply {
-                allowedOriginPatterns = listOf("https://*.asia-south2.run.app", "http://localhost:3000")
+                allowedOriginPatterns = listOf("https://*.asia-south2.run.app")
                 allowedMethods = listOf("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 allowedHeaders = listOf(
                     "Authorization",
@@ -35,6 +35,7 @@ class WebFluxConfig(
                     "Origin",
                     "Access-Control-Request-Method",
                     "Access-Control-Request-Headers",
+                    "Access-Control-Allow-Origin",
                     "Cache-Control",
                     "Connection"
                 )
