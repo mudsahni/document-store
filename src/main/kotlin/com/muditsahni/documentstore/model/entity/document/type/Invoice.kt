@@ -42,7 +42,7 @@ data class Vendor(
     @JsonProperty("gst_number")
     val gstNumber: String? = null,
     @JsonProperty("bank_details")
-    val bankDetails: List<BankDetail> = emptyList(),
+    val bankDetails: List<BankDetail>? = null,
     val pan: String? = null,
     @JsonProperty("upi_id")
     val upiId: String? = null

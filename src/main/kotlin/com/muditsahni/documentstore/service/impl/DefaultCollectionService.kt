@@ -232,11 +232,11 @@ class DefaultCollectionService(
 
         // get signed url link for document
 
-        var downloadableLink: String? = null
+        var downloadableLink: String = ""
 
         try {
             logger.info("Processing document: $documentId")
-            val downloadableLink = storageService.getFileUrl(tenantId, collectionId, documentId, fileName)
+            downloadableLink = storageService.getFileUrl(tenantId, collectionId, documentId, fileName)
             logger.info("Got signed url for document: $downloadableLink")
         } catch (e: FileNotFoundException) {
             logger.error(e) { "Error getting signed url for document: $documentId" }
@@ -259,7 +259,7 @@ class DefaultCollectionService(
                 collectionId = collectionId,
                 tenantId = tenantId,
                 name = fileName,
-                url = downloadableLink.toString(),
+                url = downloadableLink,
                 type = DocumentType.INVOICE,
                 fileType = FileType.PDF,
                 prompt = prompt,
@@ -335,20 +335,27 @@ class DefaultCollectionService(
         try {
             // get processed document
 
+            logger.info("Processing document callback: ${processDocumentCallbackRequest.id}")
             // update document
             val document = DocumentHelper.getDocument(firestore, processDocumentCallbackRequest.id, tenant)
             if (processDocumentCallbackRequest.error != null) {
+                logger.error("There was an error parsing the document: ${processDocumentCallbackRequest.id}. " +
+                        "Error: ${processDocumentCallbackRequest.error}")
                 document.status = DocumentStatus.ERROR
                 document.error = MajorErrorCode.toDocumentError(MajorErrorCode.INV_MAJ_DOC_001)
             } else {
+                logger.info("Updating document with parsed data: ${processDocumentCallbackRequest.id}")
                 document.status = DocumentStatus.PARSED
                 document.data = StructuredData(
                     raw = processDocumentCallbackRequest.parsedData,
                     structured = null
                 )
+                logger.debug("Parsed data: ${processDocumentCallbackRequest.parsedData}")
             }
 
-            FirestoreHelper.batchUpdateDocuments(
+            logger.info("Updating document with parsed data: ${processDocumentCallbackRequest.id}")
+
+            val batchUpdateResponse = FirestoreHelper.batchUpdateDocuments(
                 firestore,
                 listOf(
                     DocumentUpdate(
@@ -373,57 +380,88 @@ class DefaultCollectionService(
                 )
             )
 
+            if (batchUpdateResponse.failures.isNotEmpty() || batchUpdateResponse.failureCount > 0) {
+                logger.error("Error updating document status")
+                eventStreamService.errorStream(CollectionStatusEvent(
+                    id = collectionId,
+                    name = "Collection",
+                    status = CollectionStatus.FAILED,
+                    type = CollectionType.INVOICE,
+                    error = MajorErrorCode.toCollectionError(MajorErrorCode.GEN_MAJ_COL_002)
+                ))
+                throw CollectionCreationError(MajorErrorCode.GEN_MAJ_COL_002, "Error updating document status.")
+            }
+
             logger.info("Updating document with parsed data: ${processDocumentCallbackRequest.id}")
 
 
-            scope.launch {
-
-                document.data?.structured = objectMapper.readValue<InvoiceWrapper>(
-                    processDocumentCallbackRequest.parsedData,
-                    InvoiceWrapper::class.java
-                )
-                document.status = DocumentStatus.STRUCTURED
-                FirestoreHelper.batchUpdateDocuments(
-                    firestore,
-                    listOf(
-                        DocumentUpdate(
-                            "tenants/${tenant.tenantId}/documents",
-                            processDocumentCallbackRequest.id,
-                            mapOf(
-                                "data" to FieldUpdate.Set(document.data),
-                                "status" to FieldUpdate.Set(document.status)
-                            )
-                        ),
-                        DocumentUpdate(
-                            "tenants/${tenant.tenantId}/collections",
-                            collectionId,
-                            mapOf(
-                                "documents" to FieldUpdate.MapUpdate(
-                                    processDocumentCallbackRequest.id,
-                                    document.status
-                                )
+            document.data?.structured = objectMapper.readValue<InvoiceWrapper>(
+                processDocumentCallbackRequest.parsedData,
+                InvoiceWrapper::class.java
+            )
+            document.status = DocumentStatus.STRUCTURED
+            val batchUpdateResponse2 = FirestoreHelper.batchUpdateDocuments(
+                firestore,
+                listOf(
+                    DocumentUpdate(
+                        "tenants/${tenant.tenantId}/documents",
+                        processDocumentCallbackRequest.id,
+                        mapOf(
+                            "data" to FieldUpdate.Set(document.data),
+                            "status" to FieldUpdate.Set(document.status)
+                        )
+                    ),
+                    DocumentUpdate(
+                        "tenants/${tenant.tenantId}/collections",
+                        collectionId,
+                        mapOf(
+                            "documents" to FieldUpdate.MapUpdate(
+                                processDocumentCallbackRequest.id,
+                                document.status
                             )
                         )
                     )
                 )
-                logger.info("Completed processing document: ${processDocumentCallbackRequest.id}")
+            )
 
-                val collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
-
-                val areAllDocumentsStructured = collection.documents.values.all { it == DocumentStatus.STRUCTURED }
-                if (areAllDocumentsStructured) {
-                    collection.status = CollectionStatus.COMPLETED
-                    CollectionHelper.saveCollection(firestore, tenant, collection)
-                    logger.info("Stream completed for collection: $collectionId")
-                    emitCollectionStatusEvent(
-                        CollectionHelper.getCollection(firestore, collectionId, tenant)
-                    )
-                }
+            if (batchUpdateResponse2.failures.isNotEmpty() || batchUpdateResponse2.failureCount > 0) {
+                logger.error("Error updating document status")
+                eventStreamService.errorStream(CollectionStatusEvent(
+                    id = collectionId,
+                    name = "Collection",
+                    status = CollectionStatus.FAILED,
+                    type = CollectionType.INVOICE,
+                    error = MajorErrorCode.toCollectionError(MajorErrorCode.GEN_MAJ_COL_002)
+                ))
+                throw CollectionCreationError(MajorErrorCode.GEN_MAJ_COL_002, "Error updating document status.")
             }
+
+            logger.info("Completed processing document: ${processDocumentCallbackRequest.id}")
+
+            val collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
+
+            val areAllDocumentsStructured = collection.documents.values.all { it == DocumentStatus.STRUCTURED }
+            if (areAllDocumentsStructured) {
+                collection.status = CollectionStatus.COMPLETED
+                CollectionHelper.saveCollection(firestore, tenant, collection)
+                logger.info("Stream completed for collection: $collectionId")
+                emitCollectionStatusEvent(
+                    CollectionHelper.getCollection(firestore, collectionId, tenant)
+                )
+            }
+
+            logger.info("Emitting collection status event for collection $collectionId")
             document
         } catch (e: Exception) {
-            logger.error(e) { "Error processing document callback" }
+            logger.error(e) { "Error processing document callback. Error: ${e.message}" }
             // You might want to emit an error event here
+            eventStreamService.errorStream(CollectionStatusEvent(
+                id = processDocumentCallbackRequest.id,
+                name = "Document",
+                status = CollectionStatus.FAILED,
+                type = CollectionType.INVOICE,
+                error = MajorErrorCode.toCollectionError(MajorErrorCode.INV_MAJ_DOC_001)
+            ))
             throw e
         }
     }
