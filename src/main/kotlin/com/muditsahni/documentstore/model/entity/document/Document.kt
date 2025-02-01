@@ -10,6 +10,7 @@ import com.muditsahni.documentstore.model.enum.DocumentStatus
 import com.muditsahni.documentstore.model.enum.DocumentType
 import java.lang.IllegalStateException
 
+
 data class Document(
     val id: String,
     val name: String,
@@ -55,7 +56,9 @@ fun DocumentSnapshot.toDocument(): Document {
     val dataMap = get("data") as? HashMap<String, Any?>
     val structuredData = dataMap?.let { map ->
         try {
+            // Convert HashMap to JSON string first
             val jsonString = objectMapper.writeValueAsString(map)
+            // Then parse JSON to StructuredData
             objectMapper.readValue(jsonString, StructuredData::class.java)
         } catch (e: Exception) {
             throw IllegalStateException("Failed to parse structured data: ${e.message}")

@@ -11,19 +11,18 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.server.ServerWebInputException
-import java.time.LocalDateTime
 
 @RestControllerAdvice
 class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException::class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     fun handleIllegalState(e: IllegalStateException): ResponseEntity<ErrorResponse> {
         return ResponseEntity
-            .status(HttpStatus.FORBIDDEN)
+            .status(HttpStatus.INTERNAL_SERVER_ERROR)
             .body(ErrorResponse(
-                code = MajorErrorCode.GEN_MAJ_AUTH_002.code,
-                message = MajorErrorCode.GEN_MAJ_AUTH_002.message
+                code = MajorErrorCode.INV_MAJ_DOC_001.code,
+                message = MajorErrorCode.INV_MAJ_DOC_001.message
             ))
     }
 

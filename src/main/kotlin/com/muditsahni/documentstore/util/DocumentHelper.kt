@@ -89,20 +89,4 @@ object DocumentHelper {
         )
     }
 
-
-    suspend fun updateDocumentStatus(
-        firestore: Firestore,
-        tenant: Tenant,
-        documentId: String,
-        status: DocumentStatus
-    ) {
-        val document = getDocument(firestore, documentId, tenant)
-        document.status = status
-        document.updatedBy = SYSTEM_USER
-        document.updatedAt = System.currentTimeMillis()
-
-        saveDocument(firestore, tenant, document)
-    }
-
-
 }

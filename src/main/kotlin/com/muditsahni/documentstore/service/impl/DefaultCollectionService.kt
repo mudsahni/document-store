@@ -16,6 +16,8 @@ import com.muditsahni.documentstore.exception.throwable.CollectionCreationError
 import com.muditsahni.documentstore.model.cloudtasks.DocumentProcessingTask
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.InvoiceWrapperDTO
+import com.muditsahni.documentstore.model.dto.response.toInvoiceWrapper
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.PromptTemplate
 import com.muditsahni.documentstore.model.entity.SignedUrlResponse
@@ -338,6 +340,7 @@ class DefaultCollectionService(
             logger.info("Processing document callback: ${processDocumentCallbackRequest.id}")
             // update document
             val document = DocumentHelper.getDocument(firestore, processDocumentCallbackRequest.id, tenant)
+
             if (processDocumentCallbackRequest.error != null) {
                 logger.error("There was an error parsing the document: ${processDocumentCallbackRequest.id}. " +
                         "Error: ${processDocumentCallbackRequest.error}")
@@ -394,11 +397,13 @@ class DefaultCollectionService(
 
             logger.info("Updating document with parsed data: ${processDocumentCallbackRequest.id}")
 
-
-            document.data?.structured = objectMapper.readValue<InvoiceWrapper>(
+            val invoiceWrapperDTO = objectMapper.readValue<InvoiceWrapperDTO>(
                 processDocumentCallbackRequest.parsedData,
-                InvoiceWrapper::class.java
+                InvoiceWrapperDTO::class.java
             )
+
+            val invoiceWrapper = invoiceWrapperDTO.toInvoiceWrapper()
+            document.data?.structured = invoiceWrapper
             document.status = DocumentStatus.STRUCTURED
             val batchUpdateResponse2 = FirestoreHelper.batchUpdateDocuments(
                 firestore,
