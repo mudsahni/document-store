@@ -358,7 +358,7 @@ class DefaultCollectionService(
                 logger.debug("Parsed data: ${processDocumentCallbackRequest.parsedData}")
             }
 
-            logger.info("Updating document with parsed data: ${processDocumentCallbackRequest.id}")
+            logger.info("Persisting updated document with parsed data: ${processDocumentCallbackRequest.id}")
 
             val batchUpdateResponse = FirestoreHelper.batchUpdateDocuments(
                 firestore,
@@ -463,7 +463,10 @@ class DefaultCollectionService(
 
             logger.info("Emitting collection status event for collection $collectionId")
             emitCollectionStatusEvent(collection)
-            eventStreamService.completeStream(collectionId)
+            if (areAllDocumentsStructured) {
+                logger.info("Completing stream for collection: $collectionId")
+                eventStreamService.completeStream(collectionId)
+            }
             document
         } catch (e: Exception) {
             logger.error(e) { "Error processing document callback. Error: ${e.message}" }
