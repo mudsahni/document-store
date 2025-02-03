@@ -71,12 +71,40 @@ class DocumentNotFoundException(message: String) : RuntimeException(message)
 class DocumentUpdateException(message: String) : RuntimeException(message)
 class BatchUpdateException(message: String) : RuntimeException(message)
 
-
 object FirestoreHelper {
 
     const val MAX_CHUNK_SIZE = 500
     private val logger = KotlinLogging.logger {
         FirestoreHelper::class.java.name
+    }
+
+    suspend fun queryDocuments(
+        firestore: Firestore,
+        collectionPath: String,
+        field: String,
+        value: Any,
+        limit: Int? = null
+    ): List<Map<String, Any>> = try {
+        logger.info { "Querying documents in $collectionPath where $field = $value" }
+
+        var query = firestore.collection(collectionPath)
+            .whereEqualTo(field, value)
+
+        // Apply limit if specified
+        if (limit != null) {
+            query = query.limit(limit)
+        }
+
+        val querySnapshot = query.get().get()
+
+        querySnapshot.documents.map { document ->
+            document.data
+        }.also {
+            logger.info { "Query returned ${it.size} documents" }
+        }
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to query documents from $collectionPath" }
+        throw BatchOperationException("Query failed: ${e.message}")
     }
 
     private fun convertToFirestoreUpdates(

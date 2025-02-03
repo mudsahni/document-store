@@ -2,13 +2,19 @@ package com.muditsahni.documentstore.model.entity
 
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.DocumentSnapshot
+import com.google.cloud.firestore.Firestore
 import com.muditsahni.documentstore.exception.CollectionError
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.dto.response.GetCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.GetCollectionWithDocumentsResponse
+import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.CollectionType
 import com.muditsahni.documentstore.model.enum.DocumentStatus
+import com.muditsahni.documentstore.model.enum.DocumentType
+import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
+import com.muditsahni.documentstore.util.CollectionHelper
 
 data class Collection(
 
@@ -21,8 +27,8 @@ data class Collection(
     val createdBy: String,
     val createdAt: Timestamp = Timestamp.now(),
     var updatedBy: String? = null,
-    var updatedAt: Timestamp? = null
-
+    var updatedAt: Timestamp? = null,
+    var tags: Map<String, String> = emptyMap()
 )
 
 fun DocumentSnapshot.toCollection(): Collection {
@@ -42,7 +48,8 @@ fun DocumentSnapshot.toCollection(): Collection {
         createdBy = getString("createdBy") ?: throw IllegalStateException("Collection createdBy not found"),
         createdAt = getTimestamp("createdAt") ?: throw IllegalStateException("Collection createdAt not found"),
         updatedBy = getString("updatedBy"),
-        updatedAt = getTimestamp("updatedAt")
+        updatedAt = getTimestamp("updatedAt"),
+        tags = get("tags") as? Map<String, String> ?: emptyMap()
     )
 }
 
@@ -66,9 +73,24 @@ fun Collection.toCreateCollectionReponse(documents: Map<String, SignedUrlRespons
         type = this.type,
         documents = documents,
         error = this.error,
+        tags = this.tags
     )
 }
 
+suspend fun Collection.toGetCollectionWithDocumentsResponse(firestore: Firestore): GetCollectionWithDocumentsResponse {
+    return GetCollectionWithDocumentsResponse(
+        id = this.id,
+        name = this.name,
+        type = this.type,
+        status = this.status,
+        createdAt = this.createdAt,
+        createdBy = this.createdBy,
+        updatedAt = this.updatedAt,
+        updatedBy = this.updatedBy,
+        tags = this.tags,
+        documents = CollectionHelper.getCollectionDocuments(firestore, this.id, Tenant.PERFECT_ACCOUNTING_AND_SHARED_SERVICES)
+    )
+}
 
 fun Collection.toGetCollectionResponse(): GetCollectionResponse {
     return GetCollectionResponse(
@@ -78,6 +100,7 @@ fun Collection.toGetCollectionResponse(): GetCollectionResponse {
         documents = this.documents,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
-        updatedBy = this.updatedBy
+        updatedBy = this.updatedBy,
+        tags = this.tags
     )
 }

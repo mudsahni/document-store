@@ -16,6 +16,7 @@ import com.muditsahni.documentstore.exception.throwable.CollectionCreationError
 import com.muditsahni.documentstore.model.cloudtasks.DocumentProcessingTask
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.GetCollectionWithDocumentsResponse
 import com.muditsahni.documentstore.model.dto.response.InvoiceWrapperDTO
 import com.muditsahni.documentstore.model.dto.response.toInvoiceWrapper
 import com.muditsahni.documentstore.model.entity.Collection
@@ -27,6 +28,7 @@ import com.muditsahni.documentstore.model.entity.document.StructuredData
 import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
+import com.muditsahni.documentstore.model.entity.toGetCollectionWithDocumentsResponse
 import com.muditsahni.documentstore.model.enum.*
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import com.muditsahni.documentstore.respository.BatchCreateResult
@@ -486,6 +488,38 @@ class DefaultCollectionService(
         // complete stream
     }
 
+
+    suspend fun getCollection(
+        userId: String,
+        tenant: Tenant,
+        collectionId: String
+    ): Collection {
+        val collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
+
+        collection.createdBy.let {
+            if (it != userId) {
+                throw CollectionCreationError(MajorErrorCode.GEN_MAJ_COL_001, "User does not have permission to view collection.")
+            }
+        }
+
+        return collection
+    }
+
+    suspend fun getCollectionWithDocuments(
+        userId: String,
+        tenant: Tenant,
+        collectionId: String
+    ): GetCollectionWithDocumentsResponse {
+        val collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
+
+        collection.createdBy.let {
+            if (it != userId) {
+                throw CollectionCreationError(MajorErrorCode.GEN_MAJ_COL_001, "User does not have permission to view collection.")
+            }
+        }
+        return collection.toGetCollectionWithDocumentsResponse(firestore)
+    }
+
     suspend fun getAllCollections(
         userId: String,
         tenant: Tenant,
@@ -516,50 +550,6 @@ class DefaultCollectionService(
 
         // Return collections
         return collections
-    }
-
-
-    suspend fun updateDocumentCollectionAndUserWithUploadedDocumentStatus(
-        userId: String,
-        tenant: Tenant,
-        collectionId: String,
-        documentFilePath: String?,
-        documentId: String,
-        status: DocumentStatus,
-        error: DocumentError? = null,
-    ) {
-        logger.info("Updating collection with uploaded document for user $userId")
-
-        // update document
-
-        val document = DocumentHelper.getDocument(firestore, documentId, tenant)
-        document.status = status
-        document.path = documentFilePath
-        document.error = error
-
-        // update document status
-        DocumentHelper.saveDocument(
-            firestore,
-            tenant,
-            document
-        )
-
-        // update collection
-        CollectionHelper.updateCollectionDocuments(
-            firestore,
-            tenant,
-            collectionId,
-            documentId,
-            status
-        )
-
-        // update user
-        UserHelper.updateUserDocuments(
-            firestore,
-            userId,
-            tenant,
-            documentId
-        )
     }
 }
 

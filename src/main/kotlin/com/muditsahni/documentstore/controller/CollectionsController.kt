@@ -8,6 +8,8 @@ import com.muditsahni.documentstore.model.dto.request.NewCollectionRequest
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
 import com.muditsahni.documentstore.model.dto.request.UploadCallbackRequest
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.GetCollectionResponse
+import com.muditsahni.documentstore.model.dto.response.GetCollectionWithDocumentsResponse
 import com.muditsahni.documentstore.model.entity.toGetCollectionResponse
 import com.muditsahni.documentstore.model.enum.DocumentStatus
 import com.muditsahni.documentstore.model.enum.Tenant
@@ -61,34 +63,38 @@ class CollectionsController(
             }
     }
 
-//    @PostMapping("/{collectionId}/upload")
-//    suspend fun uploadCallback(
-//        @PathVariable tenantId: String,
-//        @PathVariable collectionId: String,
-//        @RequestBody request: UploadCallbackRequest,
-//        @AuthenticationPrincipal jwt: Jwt
-//    ): ResponseEntity<String> {
-//
-//        logger.info("Upload callback received for collection $collectionId and document ${request.documentId}")
-//        val documentError = if (request.error != null) {
-//            DocumentError(request.error, DocumentErrorType.DOCUMENT_UPLOAD_ERROR)
-//        } else {
-//            null
-//        }
-//        val documentStatus = if (request.status == UploadStatus.SUCCESS) { DocumentStatus.UPLOADED } else {  DocumentStatus.ERROR }
-//
-//        collectionsService.updateDocumentCollectionAndUserWithUploadedDocumentStatus(
-//            request.userId,
-//            Tenant.fromTenantId(tenantId),
-//            collectionId,
-//            request.uploadPath,
-//            request.documentId,
-//            documentStatus,
-//            documentError,
-//        )
-//
-//        return ResponseEntity.ok("Upload callback completed.")
-//    }
+    @GetMapping("/{collectionId}")
+    suspend fun get(
+        @PathVariable tenantId: String,
+        @PathVariable collectionId: String,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<GetCollectionResponse> {
+        logger.info { "Get collection call received" }
+
+        // Get collection
+        val collection = collectionsService.getCollection(userDetails.uid, userDetails.tenant, collectionId)
+
+        logger.info { "Collection fetched successfully" }
+        // Return collection
+        return ResponseEntity.ok(collection.toGetCollectionResponse())
+    }
+
+
+    @GetMapping("/{collectionId}/documents")
+    suspend fun getDocuments(
+        @PathVariable tenantId: String,
+        @PathVariable collectionId: String,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<GetCollectionWithDocumentsResponse> {
+        logger.info { "Get documents call received" }
+
+        // Get collection
+        val collectionWithDocuments = collectionsService.getCollectionWithDocuments(userDetails.uid, userDetails.tenant, collectionId)
+
+        logger.info { "Collection fetched successfully" }
+        // Return collection
+        return ResponseEntity.ok(collectionWithDocuments)
+    }
 
     @GetMapping
     suspend fun getAll(
@@ -119,16 +125,6 @@ class CollectionsController(
         // Return collections
         return ResponseEntity.ok(GetCollectionsResponse(collections = collections.map { it.toGetCollectionResponse() }))
     }
-
-//    @PostMapping
-//    suspend fun uploadCallback(
-//        @RequestBody request: UploadCallbackRequest,
-//    ): {
-//        // Optional: Additional verification if needed
-//        val jwt = authentication.credentials as Jwt
-//        val audience = jwt.claims["aud"] as String
-//
-//    }
 
     @PostMapping
     suspend fun create(
@@ -187,11 +183,6 @@ class CollectionsController(
         require(fileType in FileUploadConfig.ALLOWED_CONTENT_TYPES) {
             "File $fileName must be a PDF"
         }
-
-        // Check file size
-//        require(file. <= FileUploadConfig.MAX_FILE_SIZE) {
-//            "File ${file.originalFilename} exceeds maximum size of ${FileUploadConfig.MAX_FILE_SIZE / 1024 / 1024}MB"
-//        }
     }
 
 

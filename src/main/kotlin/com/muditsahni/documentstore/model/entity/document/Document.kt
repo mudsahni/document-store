@@ -3,6 +3,7 @@ package com.muditsahni.documentstore.model.entity.document
 import com.google.cloud.firestore.DocumentSnapshot
 import com.muditsahni.documentstore.config.getObjectMapper
 import com.muditsahni.documentstore.exception.DocumentError
+import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.enum.AIClient
 import com.muditsahni.documentstore.model.enum.DocumentRole
@@ -50,6 +51,24 @@ data class ParsedData(
     val data: MutableMap<String, Any> = mutableMapOf(),
     val metadata: ParsedDataMetadata
 )
+
+fun Document.toGetDocumentResponse(): GetDocumentResponse {
+    return GetDocumentResponse(
+        id = id,
+        name = name,
+        path = path,
+        type = type,
+        collectionId = collectionId,
+        status = status,
+        data = data,
+        private = private,
+        permissions = permissions,
+        createdBy = createdBy,
+        createdAt = createdAt,
+        updatedBy = updatedBy,
+        updatedAt = updatedAt
+    )
+}
 
 fun DocumentSnapshot.toDocument(): Document {
     val objectMapper = getObjectMapper()

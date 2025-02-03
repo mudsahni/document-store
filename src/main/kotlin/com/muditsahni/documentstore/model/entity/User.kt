@@ -2,6 +2,7 @@ package com.muditsahni.documentstore.model.entity
 
 import com.google.cloud.Timestamp
 import com.google.cloud.firestore.DocumentSnapshot
+import com.muditsahni.documentstore.model.dto.response.GetUserDetailsResponse
 import com.muditsahni.documentstore.model.enum.UserRole
 
 data class User(
@@ -36,5 +37,16 @@ fun DocumentSnapshot.toUser(): User {
         createdAt = getTimestamp("createdAt") ?: Timestamp.now(),
         updatedAt = getTimestamp("updatedAt"),
         updatedBy = getString("updatedBy")
+    )
+}
+
+fun User.toGetUserDetailsResponse(): GetUserDetailsResponse {
+    return GetUserDetailsResponse(
+        id = this.id,
+        name = "${this.firstName} ${this.lastName}",
+        email = this.email,
+        role = this.role.value,
+        createdAt = this.createdAt.seconds,
+        updatedAt = this.updatedAt?.seconds ?: 0
     )
 }

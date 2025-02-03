@@ -13,4 +13,5 @@ data class NewCollectionRequest(
     val name: String,
     @field:NotBlank(message = "Type is required")
     val type: CollectionType,
+    val tags: Map<String, String> = emptyMap()
 )

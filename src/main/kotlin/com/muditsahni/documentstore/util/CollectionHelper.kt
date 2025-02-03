@@ -4,10 +4,13 @@ import com.google.cloud.Timestamp
 import com.google.cloud.firestore.Firestore
 import com.muditsahni.documentstore.exception.MajorErrorCode
 import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundException
+import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.SYSTEM_USER
 import com.muditsahni.documentstore.model.entity.SignedUrlResponse
+import com.muditsahni.documentstore.model.entity.document.toDocument
+import com.muditsahni.documentstore.model.entity.document.toGetDocumentResponse
 import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.DocumentStatus
@@ -45,6 +48,28 @@ object CollectionHelper {
         val collection = collectionRef.toCollection()
         logger.info("Collection object fetched and converted to collection class")
         return collection
+    }
+
+    suspend fun getCollectionDocuments(
+        firestore: Firestore,
+        collectionId: String,
+        tenant: Tenant
+    ): Map<String, GetDocumentResponse> {
+
+        val documents = firestore
+            .collection("tenants")
+            .document(tenant.tenantId)
+            .collection("documents")
+            .whereEqualTo("collectionId", collectionId)
+            .get()
+            .await()
+            .documents
+            .map { it.toDocument() }
+
+        val documentMap = documents.associateBy({ it.id }, { it.toGetDocumentResponse() })
+
+        logger.info("Collection fetched with documents from Firestore")
+        return documentMap
     }
 
     suspend fun saveCollection(
