@@ -26,6 +26,7 @@ import com.muditsahni.documentstore.model.entity.StorageEvent
 import com.muditsahni.documentstore.model.entity.document.Document
 import com.muditsahni.documentstore.model.entity.document.StructuredData
 import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
+import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
 import com.muditsahni.documentstore.model.entity.toGetCollectionWithDocumentsResponse
@@ -548,9 +549,10 @@ class DefaultCollectionService(
             .await()
             .documents
             .mapNotNull { doc ->
-                doc.toObject(Collection::class.java)
+                doc.toCollection()
             }
 
+        logger.info("Fetched ${collections.size} collections")
         // Return collections
         return collections
     }

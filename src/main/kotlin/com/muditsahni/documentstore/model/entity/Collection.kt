@@ -97,6 +97,7 @@ fun Collection.toGetCollectionResponse(): GetCollectionResponse {
         id = this.id,
         name = this.name,
         type = this.type,
+        status= this.status,
         documents = this.documents,
         createdAt = this.createdAt,
         updatedAt = this.updatedAt,
