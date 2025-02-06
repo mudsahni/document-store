@@ -11,7 +11,7 @@ fun getObjectMapper(): ObjectMapper {
         registerKotlinModule()
         configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
-        // Set the naming strategy to SnakeCase for global field naming
-        setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
+//        // Set the naming strategy to SnakeCase for global field naming
+//        setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE)
     }
 }
