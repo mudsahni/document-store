@@ -1,6 +1,5 @@
 package com.muditsahni.documentstore.controller
 
-import com.muditsahni.documentstore.model.dto.response.GetCollectionResponse
 import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.entity.document.toGetDocumentResponse
 import com.muditsahni.documentstore.security.FirebaseUserDetails
@@ -42,7 +41,7 @@ class DocumentController(
         // Get collection
         val document = documentService.getDocument(userDetails.uid, userDetails.tenant, documentId)
 
-        logger.info { "Collection fetched successfully" }
+        logger.info { "Document fetched successfully" }
         // Return collection
         return ResponseEntity.ok(document.toGetDocumentResponse())
     }

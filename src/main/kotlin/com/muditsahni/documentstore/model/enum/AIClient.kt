@@ -1,8 +1,9 @@
 package com.muditsahni.documentstore.model.enum
 
 enum class AIClient(val value: String) {
-    ANTHROPIC("anthropic"),
-    GOOGLE("google"),
-    OPENAI("openai"),
-    LLAMA("llama"),
+    ANTHROPIC("ANTHROPIC"),
+    GEMINI("GEMINI"),
+    OPENAI("OPENAI"),
+    LLAMA("LLAMA"),
+    DEEPSEEK("DEEPSEEK"),
 }

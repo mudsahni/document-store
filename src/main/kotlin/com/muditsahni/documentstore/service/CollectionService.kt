@@ -85,7 +85,7 @@ abstract class CollectionService(
                 "${documentParserProperties.name}-${documentParserProperties.projectNumber}." +
                 "${documentParserProperties.region}.run.app/" +
                 "${documentParserProperties.uri}/${documentParserProperties.version}/" +
-                endpoint
+                endpoint + "?ai=GEMINI"
 
         logger.info("Document parser upload endpoint fetched: $documentParserEndpoint")
 
