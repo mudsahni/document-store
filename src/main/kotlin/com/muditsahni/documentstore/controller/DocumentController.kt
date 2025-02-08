@@ -1,5 +1,6 @@
 package com.muditsahni.documentstore.controller
 
+import com.muditsahni.documentstore.model.dto.response.DocumentDownloadResponse
 import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.entity.document.toGetDocumentResponse
 import com.muditsahni.documentstore.security.FirebaseUserDetails
@@ -44,5 +45,21 @@ class DocumentController(
         logger.info { "Document fetched successfully" }
         // Return collection
         return ResponseEntity.ok(document.toGetDocumentResponse())
+    }
+
+    @GetMapping("/{documentId}/download")
+    suspend fun download(
+        @PathVariable tenantId: String,
+        @PathVariable documentId: String,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<DocumentDownloadResponse> {
+        logger.info { "Download document call received" }
+
+        // Get collection
+        val downloadDocumentResponse = documentService.downloadDocument(userDetails.uid, userDetails.tenant, documentId)
+
+        logger.info { "Document download link fetched successfully." }
+        // Return collection
+        return ResponseEntity.ok(downloadDocumentResponse)
     }
 }
