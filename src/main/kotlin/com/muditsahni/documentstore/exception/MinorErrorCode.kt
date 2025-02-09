@@ -6,6 +6,10 @@ enum class MinorErrorCode(
 ) : ErrorCode {
     GEN_MIN_DOC_001("GEN_MIN_DOC_001", "Document could not be uploaded."),
     GEN_MIN_DOC_002("GEN_MIN_DOC_002", "Document it too large."),
+    VAL_MIN_DOC_001("VAL_MIN_DOC_001", "Document does not contain any content to validate."),
+    VAL_MIN_DOC_002("VAL_MIN_DOC_002", "Document does not contain any structured content to validate."),
+    VAL_MIN_DOC_003("VAL_MIN_DOC_003", "Document type cannot be validated."),
+
     INV_MIN_DOC_001("INV_MIN_DOC_001", "Document could not be validated.");
 
     companion object {

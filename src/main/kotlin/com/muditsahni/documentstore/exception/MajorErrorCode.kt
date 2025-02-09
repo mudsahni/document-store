@@ -25,8 +25,8 @@ enum class MajorErrorCode(
 
     GEN_MAJ_EVT_001("GEN_MAJ_EVT_001", "Streaming event could not be emitted."),
 
-    INV_MAJ_DOC_001("INV_MAJ_DOC_001", "Document could not be processed.");
-
+    INV_MAJ_DOC_001("INV_MAJ_DOC_001", "Document could not be processed."),
+    INV_MAJ_DOC_002("INV_MAJ_DOC_002", "Error while trying to validate invoice.");
     companion object {
         fun fromCode(code: String): MajorErrorCode? {
             return values().find { it.code == code }

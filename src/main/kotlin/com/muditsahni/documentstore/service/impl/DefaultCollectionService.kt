@@ -67,6 +67,7 @@ class DefaultCollectionService(
     documentParserProperties: DocumentParserProperties,
     cloudTasksClient: CloudTasksClient,
     storageService: StorageService,
+    val documentService: DefaultDocumentService,
     @Qualifier("InvoicePromptTemplate") invoiceParsingPromptTemplate: PromptTemplate,
     @Value("\${spring.application.name}") applicationName: String,
     @Value("\${spring.cloud.gcp.project-number}") projectNumber: String,
@@ -448,26 +449,22 @@ class DefaultCollectionService(
 
             val collection: Collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
 
-            logger.info("This is the collection as json: ${objectMapper.writeValueAsString(collection)}")
-
             val areAllDocumentsStructured = collection.documents.values.all { it == DocumentStatus.STRUCTURED }
 
             logger.info("Checking if all documents are structured for collection: $collectionId")
             if (areAllDocumentsStructured) {
                 collection.status = CollectionStatus.COMPLETED
                 CollectionHelper.saveCollection(firestore, tenant, collection)
-                logger.info("Stream completed for collection: $collectionId")
+                logger.info("Parsing completed for collection: $collectionId")
                 emitCollectionStatusEvent(
                     CollectionHelper.getCollection(firestore, collectionId, tenant)
                 )
+            } else {
+                logger.info("Emitting collection status event for collection $collectionId")
+                emitCollectionStatusEvent(collection)
             }
 
-            logger.info("Emitting collection status event for collection $collectionId")
-            emitCollectionStatusEvent(collection)
-            if (areAllDocumentsStructured) {
-                logger.info("Completing stream for collection: $collectionId")
-                eventStreamService.completeStream(collectionId)
-            }
+            validateProcessedDocument(tenant, collection, document)
             document
         } catch (e: Exception) {
             logger.error(e) { "Error processing document callback. Error: ${e.message}" }
@@ -483,13 +480,33 @@ class DefaultCollectionService(
         }
     }
 
-    suspend fun validateProcessedDocument() {
+    suspend fun validateProcessedDocument(
+        tenant: Tenant,
+        collection: Collection,
+        document: Document
+    ) {
 
         // validate processed document
-
+        logger.info("Validating processed document: ${document.id}")
+        val validationErrors = documentService.validateDocument(document)
+        document.data?.errors = validationErrors
+        document.status = DocumentStatus.VALIDATED
+        collection.documents[document.id] = DocumentStatus.VALIDATED
+        // save document
+        DocumentHelper.saveDocument(firestore, tenant, document)
+        CollectionHelper.saveCollection(firestore, tenant, collection)
         // emit event
+        eventStreamService.emitEvent(
+            collection.toCollectionStatusEvent()
+        )
+        val areAllDocumentsValidated = collection.documents.values.all { it == DocumentStatus.VALIDATED }
 
         // complete stream
+        if (areAllDocumentsValidated) {
+            logger.info("Completing stream for collection: ${collection.id}")
+            eventStreamService.completeStream(collection.id)
+        }
+
     }
 
 

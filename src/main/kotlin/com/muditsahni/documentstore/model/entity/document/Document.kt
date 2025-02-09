@@ -3,6 +3,7 @@ package com.muditsahni.documentstore.model.entity.document
 import com.google.cloud.firestore.DocumentSnapshot
 import com.muditsahni.documentstore.config.getObjectMapper
 import com.muditsahni.documentstore.exception.DocumentError
+import com.muditsahni.documentstore.exception.ValidationError
 import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.enum.AIClient
@@ -37,6 +38,7 @@ data class ClientDetails(
 data class StructuredData(
     var raw: String? = null,
     var structured: InvoiceWrapper? = null,
+    var errors: Map<String, ValidationError> = emptyMap()
 )
 
 data class ParsedDataMetadata(

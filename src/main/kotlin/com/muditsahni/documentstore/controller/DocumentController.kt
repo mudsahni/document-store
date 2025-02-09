@@ -1,5 +1,6 @@
 package com.muditsahni.documentstore.controller
 
+import com.muditsahni.documentstore.exception.ValidationError
 import com.muditsahni.documentstore.model.dto.response.DocumentDownloadResponse
 import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.entity.document.toGetDocumentResponse
@@ -61,5 +62,22 @@ class DocumentController(
         logger.info { "Document download link fetched successfully." }
         // Return collection
         return ResponseEntity.ok(downloadDocumentResponse)
+    }
+
+    @GetMapping("/{documentId}/validate")
+    suspend fun validate(
+        @PathVariable tenantId: String,
+        @PathVariable documentId: String,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<Map<String, ValidationError>> {
+        logger.info { "Validate document call received" }
+
+        // Get collection
+
+        val validationErrors = documentService.validateDocument(userDetails.tenant, documentId)
+
+        logger.info { "Document validated successfully." }
+        // Return collection
+        return ResponseEntity.ok(validationErrors)
     }
 }
