@@ -74,7 +74,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Billing Date
     var billingDate = LocalDate.MIN
-    logger.info { "Billing Date: ${invoice.billingDate}" }
+
     if (invoice.billingDate.isNullOrBlank() || isValidDate(invoice.billingDate)) {
         errors.add(ValidationError("billingDate", "Billing date is null or of an unexpected format. ${invoice.billingDate}"))
     } else {
@@ -87,7 +87,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Due Date
     var dueDate = LocalDate.MIN
-    logger.info { "Due Date: ${invoice.dueDate}" }
+
     if (invoice.dueDate.isNullOrBlank() || isValidDate(invoice.dueDate)) {
         errors.add(ValidationError("dueDate", "Due date is null or of an unexpected format. ${invoice.dueDate}"))
     } else {
@@ -119,7 +119,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
         errors.add(ValidationError("currencyCode", "Currency code must be a valid ISO code (e.g., USD)."))
     }
 
-//     Customer
+    // Customer
     if (invoice.customer == null) {
         errors.add(ValidationError("customer", "Customer is required."))
     } else {
@@ -138,8 +138,8 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
                 .map { it.copy(field = "vendor.${it.field}") }
         )
     }
-//
-//    // Billed Amount
+
+    // Billed Amount
     if (invoice.billedAmount == null) {
         errors.add(ValidationError("billedAmount", "Billed amount is required."))
     } else {
@@ -149,7 +149,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
         )
     }
 
-//    // Line Items
+    // Line Items
     if (invoice.lineItems.isEmpty()) {
         errors.add(ValidationError("lineItems", "At least one line item is required."))
     } else {
@@ -171,6 +171,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 }
 
 fun validateCustomer(customer: Customer): List<ValidationError> {
+
     val errors = mutableListOf<ValidationError>()
     if (customer.name.isNullOrBlank()) {
         errors.add(ValidationError("name", "Customer name is required."))
@@ -181,9 +182,11 @@ fun validateCustomer(customer: Customer): List<ValidationError> {
     if (!customer.gstNumber.isNullOrBlank() && !gstRegex.matches(customer.gstNumber)) {
         errors.add(ValidationError("gstNumber", "Customer GST number is invalid."))
     }
-    if (!customer.pan.isNullOrBlank() && !panRegex.matches(customer.pan)) {
-        errors.add(ValidationError("pan", "Customer PAN is invalid."))
+
+    if (customer.pan.isNullOrBlank() || !panRegex.matches(customer.pan)) {
+        errors.add(ValidationError("pan", "Customer PAN is null or invalid."))
     }
+
     return errors
 }
 
@@ -195,10 +198,10 @@ fun validateVendor(vendor: Vendor): List<ValidationError> {
     if (vendor.address.isNullOrBlank()) {
         errors.add(ValidationError("address", "Vendor address is required."))
     }
-    if (!vendor.gstNumber.isNullOrBlank() && !gstRegex.matches(vendor.gstNumber)) {
+    if (vendor.gstNumber.isNullOrBlank() || !gstRegex.matches(vendor.gstNumber)) {
         errors.add(ValidationError("gstNumber", "Vendor GST number is invalid."))
     }
-    if (!vendor.pan.isNullOrBlank() && !panRegex.matches(vendor.pan)) {
+    if (vendor.pan.isNullOrBlank() || !panRegex.matches(vendor.pan)) {
         errors.add(ValidationError("pan", "Vendor PAN is invalid."))
     }
     vendor.bankDetails?.forEachIndexed { index, bankDetail ->

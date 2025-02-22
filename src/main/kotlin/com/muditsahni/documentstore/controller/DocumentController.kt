@@ -1,6 +1,7 @@
 package com.muditsahni.documentstore.controller
 
 import com.muditsahni.documentstore.exception.ValidationError
+import com.muditsahni.documentstore.model.dto.request.UpdateDocumentRequest
 import com.muditsahni.documentstore.model.dto.response.DocumentDownloadResponse
 import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.entity.document.toGetDocumentResponse
@@ -14,6 +15,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.CrossOrigin
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
+import org.springframework.web.bind.annotation.PutMapping
+import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RestController
 
@@ -79,5 +82,22 @@ class DocumentController(
         logger.info { "Document validated successfully." }
         // Return collection
         return ResponseEntity.ok(validationErrors)
+    }
+
+    @PutMapping("/{documentId}/update")
+    suspend fun update(
+        @PathVariable tenantId: String,
+        @PathVariable documentId: String,
+        @RequestBody request: UpdateDocumentRequest,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<GetDocumentResponse> {
+        logger.info { "Update document call received" }
+
+        // Get collection
+        val document = documentService.updateDocumentContent(userDetails.uid, userDetails.tenant, documentId, request.data)
+
+        logger.info { "Document updated successfully" }
+        // Return collection
+        return ResponseEntity.ok(document.toGetDocumentResponse())
     }
 }

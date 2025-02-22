@@ -8,6 +8,7 @@ import com.muditsahni.documentstore.exception.throwable.CollectionCreationError
 import com.muditsahni.documentstore.exception.throwable.DocumentValidationError
 import com.muditsahni.documentstore.model.dto.response.DocumentDownloadResponse
 import com.muditsahni.documentstore.model.entity.document.Document
+import com.muditsahni.documentstore.model.entity.document.StructuredData
 import com.muditsahni.documentstore.model.enum.DocumentType
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.service.StorageService
@@ -103,5 +104,20 @@ class DefaultDocumentService(
         logger.info { "Validating document: $documentId" }
         return validateDocument(document)
     }
+
+    suspend fun updateDocumentContent(
+        userId: String,
+        tenant: Tenant,
+        documentId: String,
+        data: StructuredData
+    ): Document {
+        val document = DocumentHelper.getDocument(firestore, documentId, tenant)
+        document.data = data
+        document.updatedAt = System.currentTimeMillis()
+        document.updatedBy = userId
+        DocumentHelper.saveDocument(firestore, tenant, document)
+        return document
+    }
+
 
 }
