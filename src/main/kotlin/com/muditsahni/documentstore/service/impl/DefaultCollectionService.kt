@@ -449,7 +449,7 @@ class DefaultCollectionService(
 
             val collection: Collection = CollectionHelper.getCollection(firestore, collectionId, tenant)
 
-            val areAllDocumentsStructured = collection.documents.values.all { it == DocumentStatus.STRUCTURED }
+            val areAllDocumentsStructured = collection.documents.values.all { it == DocumentStatus.STRUCTURED || it == DocumentStatus.VALIDATED }
 
             logger.info("Checking if all documents are structured for collection: $collectionId")
             if (areAllDocumentsStructured) {
