@@ -51,6 +51,7 @@ fun InvoiceDTO.toInvoice(): Invoice {
         billingDate = billingDate,
         dueDate = dueDate,
         placeOfSupply = placeOfSupply,
+        irnNumber = irnNumber,
         currencyCode = currencyCode,
         customer = customer?.toCustomer(),
         vendor = vendor?.toVendor(),
