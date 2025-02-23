@@ -68,6 +68,7 @@ class DefaultCollectionService(
     cloudTasksClient: CloudTasksClient,
     storageService: StorageService,
     val documentService: DefaultDocumentService,
+    val invoiceExportService: DefaultInvoiceExportService,
     @Qualifier("InvoicePromptTemplate") invoiceParsingPromptTemplate: PromptTemplate,
     @Value("\${spring.application.name}") applicationName: String,
     @Value("\${spring.cloud.gcp.project-number}") projectNumber: String,
@@ -539,6 +540,23 @@ class DefaultCollectionService(
             }
         }
         return collection.toGetCollectionWithDocumentsResponse(firestore)
+    }
+
+    suspend fun getCollectionDocumentsAsCSV(
+        userId: String,
+        tenant: Tenant,
+        collectionId: String
+    ): String {
+
+        try {
+            val collection = getCollectionWithDocuments(userId, tenant, collectionId)
+
+            val invoices = collection.documents.values.map { it.data?.raw }.filterNotNull()
+            return invoiceExportService.exportJsonToCsv(invoices)
+        } catch (e: Exception) {
+            logger.error(e) { "Error exporting collection documents to CSV" }
+            throw e
+        }
     }
 
     suspend fun getAllCollections(

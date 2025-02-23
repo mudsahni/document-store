@@ -23,6 +23,7 @@ import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 import mu.KotlinLogging
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.ServerSentEvent
@@ -183,6 +184,19 @@ class CollectionsController(
         require(fileType in FileUploadConfig.ALLOWED_CONTENT_TYPES) {
             "File $fileName must be a PDF"
         }
+    }
+
+    @GetMapping("/{collectionId}/export")
+    suspend fun exportInvoices(
+        @PathVariable tenantId: String,
+        @PathVariable collectionId: String,
+        @AuthenticationPrincipal userDetails: FirebaseUserDetails
+    ): ResponseEntity<String> {
+        val csv = collectionsService.getCollectionDocumentsAsCSV(userDetails.uid, userDetails.tenant, collectionId)
+        return ResponseEntity.ok()
+            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=invoices.csv")
+            .contentType(MediaType.TEXT_PLAIN)
+            .body(csv)
     }
 
 
