@@ -1,5 +1,10 @@
 package com.muditsahni.documentstore.model.entity.document.type
 
+import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationContext
+import com.fasterxml.jackson.databind.JsonDeserializer
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+
 data class InvoiceWrapper(
     val invoice: Invoice
 )
@@ -70,13 +75,37 @@ data class Quantity(
 )
 
 
+@JsonDeserialize(using = TaxCategoryDeserializer::class)
 enum class TaxCategory(val value: String) {
     CGST("CGST"),
     SGST("SGST"),
     IGST("IGST"),
     CESS("CESS"),
-    GST("GST")
+    GST("GST"),
+    UNKNOWN("UNKNOWN");
+
+    companion object {
+        fun fromString(value: String): TaxCategory? {
+            // First try exact match
+            values().find { it.value == value }?.let { return it }
+
+            // If no exact match, try to find as substring
+            val upperValue = value.uppercase()
+            return values().find { upperValue.contains(it.value) }
+        }
+    }
+
 }
+
+class TaxCategoryDeserializer : JsonDeserializer<TaxCategory>() {
+    override fun deserialize(p: JsonParser, ctxt: DeserializationContext): TaxCategory? {
+        val value = p.valueAsString
+        return TaxCategory.fromString(value) ?: return TaxCategory.UNKNOWN
+        // Or return null instead of throwing if you want to handle missing matches gracefully
+        // return TaxCategory.fromString(value)
+    }
+}
+
 
 data class Tax(
     val category: TaxCategory? = null,
