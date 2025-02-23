@@ -115,6 +115,12 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
         errors.add(ValidationError("placeOfSupply", "Place of supply is required."))
     }
 
+    // IRN Number
+    if (invoice.irnNumber.isNullOrBlank()) {
+        errors.add(ValidationError("irnNumber", "IRN number is not present."))
+    }
+
+
     // Currency Code
     if (invoice.currencyCode.isNullOrBlank() || !currencyRegex.matches(invoice.currencyCode)) {
         errors.add(ValidationError("currencyCode", "Currency code must be a valid ISO code (e.g., USD)."))
