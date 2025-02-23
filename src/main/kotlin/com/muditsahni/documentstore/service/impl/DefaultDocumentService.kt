@@ -115,6 +115,7 @@ class DefaultDocumentService(
         document.data = data
         document.updatedAt = System.currentTimeMillis()
         document.updatedBy = userId
+        document.data?.errors = validateDocument(document)
         DocumentHelper.saveDocument(firestore, tenant, document)
         return document
     }
