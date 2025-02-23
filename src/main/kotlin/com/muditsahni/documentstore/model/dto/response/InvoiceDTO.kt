@@ -33,6 +33,8 @@ data class InvoiceDTO(
     val dueDate: String? = null,
     @JsonProperty("place_of_supply")
     val placeOfSupply: String? = null,
+    @JsonProperty("irn_number")
+    val irnNumber: String? = null,
     @JsonProperty("currency_code")
     val currencyCode: String? = null,
     val customer: CustomerDTO? = null,

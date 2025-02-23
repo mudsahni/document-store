@@ -14,6 +14,7 @@ data class Invoice(
     val billingDate: String? = null,
     val dueDate: String? = null,
     val placeOfSupply: String? = null,
+    val irnNumber: String? = null,
     val currencyCode: String? = null,
     val customer: Customer? = null,
     val vendor: Vendor? = null,

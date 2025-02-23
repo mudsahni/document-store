@@ -5,6 +5,7 @@
       "billing_date": "string",
       "due_date": "string",
       "place_of_supply": "string",
+      "irn_number": "string",
       "currency_code": "string",
       "customer": {
         "name": "string",
