@@ -180,6 +180,11 @@ fun validateCustomer(customer: Customer): List<ValidationError> {
     if (customer.billingAddress.isNullOrBlank()) {
         errors.add(ValidationError("billingAddress", "Customer billing address is required."))
     }
+
+    if (customer.shippingAddress.isNullOrBlank()) {
+        errors.add(ValidationError("shippingAddress", "Customer shipping address is required."))
+    }
+
     if (!customer.gstNumber.isNullOrBlank() && !gstRegex.matches(customer.gstNumber)) {
         errors.add(ValidationError("gstNumber", "Customer GST number is invalid."))
     }
@@ -207,7 +212,7 @@ fun validateVendor(vendor: Vendor): List<ValidationError> {
     }
 
     if (vendor.upiId.isNullOrBlank() || !upiIdRegex.matches(vendor.upiId)) {
-        errors.add(ValidationError("pan", "Vendor UPI Id is missing or invalid."))
+        errors.add(ValidationError("upiId", "Vendor UPI Id is missing or invalid."))
     }
 
     vendor.bankDetails?.forEachIndexed { index, bankDetail ->
@@ -224,6 +229,11 @@ fun validateBankDetail(bankDetail: BankDetail, index: Int): List<ValidationError
     if (bankDetail.bankName.isNullOrBlank()) {
         errors.add(ValidationError("bankName", "Bank name is required."))
     }
+
+    if (bankDetail.branch.isNullOrBlank()) {
+        errors.add(ValidationError("branch", "Branch name is required."))
+    }
+
     if (bankDetail.accountNumber.isNullOrBlank()) {
         errors.add(ValidationError("accountNumber", "Account number is required."))
     }
@@ -249,8 +259,8 @@ fun validateBilledAmount(billedAmount: BilledAmount): List<ValidationError> {
     if (billedAmount.balanceDue == null || billedAmount.balanceDue < 0) {
         errors.add(ValidationError("balanceDue", "Balance due must be non-negative."))
     }
-    if (billedAmount.previousDues != null && billedAmount.previousDues < 0) {
-        errors.add(ValidationError("previousDues", "Previous dues must be non-negative."))
+    if (billedAmount.previousDues == null || billedAmount.previousDues < 0) {
+        errors.add(ValidationError("previousDues", "Previous dues is null or invalid."))
     }
     if (billedAmount.amountInWords.isNullOrBlank()) {
         errors.add(ValidationError("amountInWords", "Amount in words is required."))
@@ -263,6 +273,11 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
     // Use a field prefix like "description", "quantity", etc.
     if (item.description.isNullOrBlank()) {
         errors.add(ValidationError("description", "Description is required."))
+    }
+    if (item.discount == null) {
+        errors.add(ValidationError("discount", "Discount is required."))
+        errors.add(ValidationError("discount.percentage", "Discount percentage is required."))
+        errors.add(ValidationError("discount.amount", "Discount amount is required."))
     }
     if (item.quantity == null) {
         errors.add(ValidationError("quantity", "Quantity is required."))
@@ -279,6 +294,16 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
         val quantityValue = item.quantity?.value ?: 0.0
         val rate = item.rate ?: 0.0
 
+        // Validate discount
+        if (item.discount != null) {
+            errors.addAll(
+                validateDiscount(
+                    item.discount,
+                    quantityValue * rate,
+                    index
+                ).map { it.copy(field = "discount.${it.field}") })
+        }
+
         val discountAmount = if (item.discount != null) {
             if (item.discount.percentage != null) {
                 quantityValue * rate * item.discount.percentage / 100.0
@@ -293,10 +318,6 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
             errors.add(ValidationError("amount", "Amount (${item.amount}) does not match expected value ($expectedAmount) based on quantity, rate, discount, and taxes."))
         }
 
-        // Validate discount consistency if provided
-        if (item.discount != null) {
-            errors.addAll(validateDiscount(item.discount, quantityValue * rate, index).map { it.copy(field = "discount.${it.field}") })
-        }
 
         // Validate each tax
         item.taxes.forEachIndexed { taxIndex, tax ->
@@ -309,6 +330,14 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
 
 fun validateDiscount(discount: Discount, baseAmount: Double, lineItemIndex: Int): List<ValidationError> {
     val errors = mutableListOf<ValidationError>()
+    if (discount.amount == null) {
+        errors.add(ValidationError("amount", "Discount amount is required."))
+    }
+
+    if (discount.percentage == null) {
+        errors.add(ValidationError("percentage", "Discount percentage is required."))
+    }
+
     if (discount.percentage != null && discount.amount != null) {
         val expectedDiscountAmount = baseAmount * discount.percentage / 100.0
         if (abs(expectedDiscountAmount - discount.amount) > FLOAT_TOLERANCE) {
