@@ -87,11 +87,11 @@ enum class TaxCategory(val value: String) {
     companion object {
         fun fromString(value: String): TaxCategory? {
             // First try exact match
-            values().find { it.value == value }?.let { return it }
+            TaxCategory.entries.find { it.value == value }?.let { return it }
 
             // If no exact match, try to find as substring
             val upperValue = value.uppercase()
-            return values().find { upperValue.contains(it.value) }
+            return TaxCategory.entries.find { upperValue.contains(it.value) }
         }
     }
 
