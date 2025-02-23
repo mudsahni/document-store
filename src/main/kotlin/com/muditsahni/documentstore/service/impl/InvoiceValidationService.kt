@@ -26,6 +26,7 @@ private val currencyRegex = Regex("^[A-Z]{3}\$")
 private val gstRegex = Regex("^[0-9A-Z]{15}\$")
 private val panRegex = Regex("^[A-Z]{5}[0-9]{4}[A-Z]\$")
 private val ifscRegex = Regex("^[A-Z]{4}0[A-Z0-9]{6}\$")
+private val upiIdRegex = Regex("^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+\\.[a-zA-Z0-9-.]+\$")
 
 val logger = KotlinLogging.logger { "Validation" }
 fun isValidDate(dateStr: String, formats: List<String> = listOf("dd\\MM\\yyyy", "yyyy-MM-dd", "dd-MMM-yy")): Boolean {
@@ -204,6 +205,11 @@ fun validateVendor(vendor: Vendor): List<ValidationError> {
     if (vendor.pan.isNullOrBlank() || !panRegex.matches(vendor.pan)) {
         errors.add(ValidationError("pan", "Vendor PAN is invalid."))
     }
+
+    if (vendor.upiId.isNullOrBlank() || !upiIdRegex.matches(vendor.upiId)) {
+        errors.add(ValidationError("pan", "Vendor UPI Id is missing or invalid."))
+    }
+
     vendor.bankDetails?.forEachIndexed { index, bankDetail ->
         errors.addAll(
             validateBankDetail(bankDetail, index)
