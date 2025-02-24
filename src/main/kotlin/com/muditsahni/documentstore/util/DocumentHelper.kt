@@ -89,4 +89,23 @@ object DocumentHelper {
         )
     }
 
+    fun addTagsToInvoiceDocument(
+        document: Document
+    ): Document {
+        val NA = "N/A"
+        if (document.type != DocumentType.INVOICE) {
+            throw IllegalArgumentException("Document is not an invoice")
+        }
+        val invoice = document.data?.structured?.invoice
+        val tags = document.tags as MutableMap<String, String>
+        tags["vendor"] = invoice?.vendor?.name ?: NA
+        tags["customer"] = invoice?.customer?.name ?: NA
+        tags["billing_date"] = invoice?.billingDate ?: NA
+        invoice?.lineItems?.forEachIndexed { index, it ->
+            tags["line_item_${index}_hsn_sac"] = it.hsnSac ?: NA
+        }
+        document.tags = tags
+        return document
+    }
+
 }

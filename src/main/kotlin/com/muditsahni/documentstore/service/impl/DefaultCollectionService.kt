@@ -6,12 +6,7 @@ import com.google.cloud.firestore.Firestore
 import com.google.cloud.tasks.v2.CloudTasksClient
 import com.muditsahni.documentstore.config.documentparser.DocumentParserProperties
 import com.muditsahni.documentstore.config.getObjectMapper
-import com.muditsahni.documentstore.exception.CollectionError
-import com.muditsahni.documentstore.exception.CollectionErrorType
-import com.muditsahni.documentstore.exception.DocumentError
-import com.muditsahni.documentstore.exception.DocumentErrorType
 import com.muditsahni.documentstore.exception.MajorErrorCode
-import com.muditsahni.documentstore.exception.MinorErrorCode
 import com.muditsahni.documentstore.exception.throwable.CollectionCreationError
 import com.muditsahni.documentstore.model.cloudtasks.DocumentProcessingTask
 import com.muditsahni.documentstore.model.dto.request.ProcessDocumentCallbackRequest
@@ -21,18 +16,15 @@ import com.muditsahni.documentstore.model.dto.response.InvoiceWrapperDTO
 import com.muditsahni.documentstore.model.dto.response.toInvoiceWrapper
 import com.muditsahni.documentstore.model.entity.Collection
 import com.muditsahni.documentstore.model.entity.PromptTemplate
-import com.muditsahni.documentstore.model.entity.SignedUrlResponse
 import com.muditsahni.documentstore.model.entity.StorageEvent
 import com.muditsahni.documentstore.model.entity.document.Document
 import com.muditsahni.documentstore.model.entity.document.StructuredData
-import com.muditsahni.documentstore.model.entity.document.type.InvoiceWrapper
 import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
 import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
 import com.muditsahni.documentstore.model.entity.toGetCollectionWithDocumentsResponse
 import com.muditsahni.documentstore.model.enum.*
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
-import com.muditsahni.documentstore.respository.BatchCreateResult
 import com.muditsahni.documentstore.respository.BatchUpdateResult
 import com.muditsahni.documentstore.respository.DocumentCreate
 import com.muditsahni.documentstore.respository.DocumentUpdate
@@ -43,11 +35,9 @@ import com.muditsahni.documentstore.service.EventStreamService
 import com.muditsahni.documentstore.service.StorageService
 import com.muditsahni.documentstore.util.CollectionHelper
 import com.muditsahni.documentstore.util.DocumentHelper
-import com.muditsahni.documentstore.util.UserHelper
 import com.muditsahni.documentstore.util.await
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
@@ -103,38 +93,6 @@ class DefaultCollectionService(
         private val objectMapper = getObjectMapper()
 
     }
-
-//    suspend fun emitFailureEvent(
-//        batchUpdateResult: BatchUpdateResult
-//    ) {
-//        logger.error("Error updating collection and documents")
-//        eventStreamService.errorStream(CollectionStatusEvent(
-//            id = batchUpdateResult.failures.first().collectionPath,
-//            name = "Collection",
-//            status = CollectionStatus.FAILED,
-//            type = CollectionType.INVOICE,
-//            error = CollectionError(
-//                batchUpdateResult.failures.joinToString(", ") { it.error.toString() },
-//                CollectionErrorType.COLLECTION_UPDATE_ERROR
-//            )
-//        ))
-//    }
-
-//    suspend fun emitFailureEvent(
-//        batchCreateResult: BatchCreateResult
-//    ) {
-//        logger.error("Error creating collection and documents")
-//        eventStreamService.errorStream(CollectionStatusEvent(
-//            id = batchCreateResult.failures.first().collectionPath,
-//            name = "Collection",
-//            status = CollectionStatus.FAILED,
-//            type = CollectionType.INVOICE,
-//            error = CollectionError(
-//                batchCreateResult.failures.joinToString(", ") { it.error.toString() },
-//                CollectionErrorType.COLLECTION_CREATION_ERROR
-//            )
-//        ))
-//    }
 
     suspend fun createCollectionAndDocuments(
         userId: String,
@@ -507,6 +465,9 @@ class DefaultCollectionService(
             logger.info("Completing stream for collection: ${collection.id}")
             eventStreamService.completeStream(collection.id)
         }
+
+        DocumentHelper.addTagsToInvoiceDocument(document)
+        DocumentHelper.saveDocument(firestore, tenant, document)
 
     }
 

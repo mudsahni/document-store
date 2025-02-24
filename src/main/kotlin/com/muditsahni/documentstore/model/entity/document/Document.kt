@@ -27,7 +27,8 @@ data class Document(
     val createdBy: String,
     val createdAt: Long,
     var updatedBy: String? = null,
-    var updatedAt: Long? = null
+    var updatedAt: Long? = null,
+    var tags: Map<String, String> = emptyMap()
 )
 
 data class ClientDetails(
@@ -68,7 +69,8 @@ fun Document.toGetDocumentResponse(): GetDocumentResponse {
         createdBy = createdBy,
         createdAt = createdAt,
         updatedBy = updatedBy,
-        updatedAt = updatedAt
+        updatedAt = updatedAt,
+        tags = tags
     )
 }
 
@@ -104,6 +106,7 @@ fun DocumentSnapshot.toDocument(): Document {
         createdBy = getString("createdBy") ?: throw IllegalStateException("Document createdBy not found"),
         createdAt = getLong("createdAt") ?: throw IllegalStateException("Document createdAt not found"),
         updatedBy = getString("updatedBy"),
-        updatedAt = getLong("updatedAt")
+        updatedAt = getLong("updatedAt"),
+        tags = get("tags") as Map<String, String>
     )
 }

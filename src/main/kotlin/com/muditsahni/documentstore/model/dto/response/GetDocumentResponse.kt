@@ -20,5 +20,6 @@ data class GetDocumentResponse(
     val createdBy: String,
     val createdAt: Long,
     var updatedBy: String? = null,
-    var updatedAt: Long? = null
+    var updatedAt: Long? = null,
+    var tags: Map<String, String> = emptyMap()
 )
