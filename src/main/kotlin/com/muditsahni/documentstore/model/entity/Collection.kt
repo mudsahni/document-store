@@ -7,11 +7,9 @@ import com.muditsahni.documentstore.exception.CollectionError
 import com.muditsahni.documentstore.model.dto.response.CreateCollectionResponse
 import com.muditsahni.documentstore.model.dto.response.GetCollectionResponse
 import com.muditsahni.documentstore.model.dto.response.GetCollectionWithDocumentsResponse
-import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.CollectionType
 import com.muditsahni.documentstore.model.enum.DocumentStatus
-import com.muditsahni.documentstore.model.enum.DocumentType
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
 import com.muditsahni.documentstore.util.CollectionHelper
@@ -65,7 +63,7 @@ fun Collection.toCollectionStatusEvent(): CollectionStatusEvent {
     )
 }
 
-fun Collection.toCreateCollectionReponse(documents: Map<String, SignedUrlResponse?>): CreateCollectionResponse {
+fun Collection.toCreateCollectionResponse(documents: Map<String, SignedUrlResponse?>): CreateCollectionResponse {
     return CreateCollectionResponse(
         id = this.id,
         name = this.name,

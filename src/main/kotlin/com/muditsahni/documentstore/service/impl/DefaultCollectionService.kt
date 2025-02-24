@@ -21,7 +21,7 @@ import com.muditsahni.documentstore.model.entity.document.Document
 import com.muditsahni.documentstore.model.entity.document.StructuredData
 import com.muditsahni.documentstore.model.entity.toCollection
 import com.muditsahni.documentstore.model.entity.toCollectionStatusEvent
-import com.muditsahni.documentstore.model.entity.toCreateCollectionReponse
+import com.muditsahni.documentstore.model.entity.toCreateCollectionResponse
 import com.muditsahni.documentstore.model.entity.toGetCollectionWithDocumentsResponse
 import com.muditsahni.documentstore.model.enum.*
 import com.muditsahni.documentstore.model.event.CollectionStatusEvent
@@ -136,7 +136,7 @@ class DefaultCollectionService(
 
         createCollectionAndDocumentsUpdateUserAndEmitEvent(collection, batch, updateBatch)
 
-        return collection.toCreateCollectionReponse(signedUrls)
+        return collection.toCreateCollectionResponse(signedUrls)
 
     }
 

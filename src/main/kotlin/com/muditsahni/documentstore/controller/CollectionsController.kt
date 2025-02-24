@@ -88,13 +88,19 @@ class CollectionsController(
         @AuthenticationPrincipal userDetails: FirebaseUserDetails
     ): ResponseEntity<GetCollectionWithDocumentsResponse> {
         logger.info { "Get documents call received" }
+        try {
 
-        // Get collection
-        val collectionWithDocuments = collectionsService.getCollectionWithDocuments(userDetails.uid, userDetails.tenant, collectionId)
+            // Get collection
+            val collectionWithDocuments =
+                collectionsService.getCollectionWithDocuments(userDetails.uid, userDetails.tenant, collectionId)
 
-        logger.info { "Collection fetched successfully" }
-        // Return collection
-        return ResponseEntity.ok(collectionWithDocuments)
+            logger.info { "Collection fetched successfully" }
+            // Return collection
+            return ResponseEntity.ok(collectionWithDocuments)
+        } catch (e: Exception) {
+            logger.error(e) { "Error fetching documents" }
+            throw e
+        }
     }
 
     @GetMapping

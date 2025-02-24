@@ -107,6 +107,6 @@ fun DocumentSnapshot.toDocument(): Document {
         createdAt = getLong("createdAt") ?: throw IllegalStateException("Document createdAt not found"),
         updatedBy = getString("updatedBy"),
         updatedAt = getLong("updatedAt"),
-        tags = get("tags") as Map<String, String>
+        tags = get("tags") as? Map<String, String> ?: mapOf()
     )
 }
