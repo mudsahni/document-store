@@ -52,7 +52,8 @@ data class BilledAmount(
     val total: Double? = null,
     val balanceDue: Double? = null,
     val amountInWords: String? = null,
-    val previousDues: Double? = null
+    val previousDues: Double? = null,
+    val taxes: List<Tax> = emptyList()
 )
 
 data class LineItem(

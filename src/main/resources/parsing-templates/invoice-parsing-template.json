@@ -33,7 +33,14 @@
         "previous_dues": "number",
         "total": "number",
         "balance_due": "number",
-        "amount_in_words": "string"
+        "amount_in_words": "string",
+        "taxes": [
+          {
+            "category": "string",
+            "rate": "number",
+            "amount": "number"
+          }
+        ]
       },
       "line_items": [
         {

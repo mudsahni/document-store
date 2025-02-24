@@ -135,7 +135,8 @@ data class BilledAmountDTO(
     @JsonProperty("amount_in_words")
     val amountInWords: String? = null,
     @JsonProperty("previous_dues")
-    val previousDues: Double? = null
+    val previousDues: Double? = null,
+    val taxes: List<TaxDTO> = emptyList()
 )
 
 fun BilledAmountDTO.toBilledAmount(): BilledAmount {
@@ -144,7 +145,8 @@ fun BilledAmountDTO.toBilledAmount(): BilledAmount {
         total = total,
         balanceDue = balanceDue,
         amountInWords = amountInWords,
-        previousDues = previousDues
+        previousDues = previousDues,
+        taxes = taxes.map { it.toTax() }
     )
 }
 

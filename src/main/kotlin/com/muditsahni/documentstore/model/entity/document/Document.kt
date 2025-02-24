@@ -31,6 +31,10 @@ data class Document(
     var tags: Map<String, String> = emptyMap()
 )
 
+data class Metadata(
+    var ai: List<AIClient> = emptyList(),
+)
+
 data class ClientDetails(
     val model: String,
     val client: AIClient
