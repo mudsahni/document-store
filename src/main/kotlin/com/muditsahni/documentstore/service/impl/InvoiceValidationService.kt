@@ -169,7 +169,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
             totalLineItemsAmount += (lineItem.amount ?: 0.0)
         }
         val billedTotal = invoice.billedAmount?.total ?: 0.0
-        if (abs(totalLineItemsAmount - billedTotal) > FLOAT_TOLERANCE) {
+        if (abs(totalLineItemsAmount - billedTotal) > FLOAT_TOLERANCE * 100) {
             errors.add(ValidationError("billedAmount.total", "Sum of line item amounts ($totalLineItemsAmount) does not match billed total ($billedTotal)."))
         }
     }
