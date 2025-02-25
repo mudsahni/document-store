@@ -1,5 +1,6 @@
 package com.muditsahni.documentstore.service.impl
 
+import com.muditsahni.documentstore.exception.ErrorSeverity
 import com.muditsahni.documentstore.exception.ValidationError
 import com.muditsahni.documentstore.model.entity.document.type.BankDetail
 import com.muditsahni.documentstore.model.entity.document.type.BilledAmount
@@ -70,19 +71,25 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Invoice Number
     if (invoice.invoiceNumber.isNullOrBlank()) {
-        errors.add(ValidationError("invoiceNumber", "Invoice number is required."))
+        errors.add(ValidationError("invoiceNumber", "Invoice number is required.", ErrorSeverity.CRITICAL))
     }
 
     // Billing Date
     var billingDate = LocalDate.MIN
 
     if (invoice.billingDate.isNullOrBlank() || isValidDate(invoice.billingDate)) {
-        errors.add(ValidationError("billingDate", "Billing date is null or of an unexpected format. ${invoice.billingDate}"))
+        errors.add(
+            ValidationError(
+                "billingDate",
+                "Billing date is null or of an unexpected format. ${invoice.billingDate}",
+                ErrorSeverity.CRITICAL
+            )
+        )
     } else {
         try {
             billingDate = parseDate(invoice.billingDate)
         } catch (e: DateTimeParseException) {
-            errors.add(ValidationError("billingDate", "Billing date is invalid."))
+            errors.add(ValidationError("billingDate", "Billing date is invalid.", ErrorSeverity.CRITICAL))
         }
     }
 
@@ -128,7 +135,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Customer
     if (invoice.customer == null) {
-        errors.add(ValidationError("customer", "Customer is required."))
+        errors.add(ValidationError("customer", "Customer is required.", ErrorSeverity.CRITICAL))
     } else {
         errors.addAll(
             validateCustomer(invoice.customer)
@@ -138,7 +145,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Vendor
     if (invoice.vendor == null) {
-        errors.add(ValidationError("vendor", "Vendor is required."))
+        errors.add(ValidationError("vendor", "Vendor is required.", ErrorSeverity.CRITICAL))
     } else {
         errors.addAll(
             validateVendor(invoice.vendor)
@@ -148,7 +155,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Billed Amount
     if (invoice.billedAmount == null) {
-        errors.add(ValidationError("billedAmount", "Billed amount is required."))
+        errors.add(ValidationError("billedAmount", "Billed amount is required.", ErrorSeverity.CRITICAL))
     } else {
         errors.addAll(
             validateBilledAmount(invoice.billedAmount)
@@ -158,7 +165,7 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
 
     // Line Items
     if (invoice.lineItems.isEmpty()) {
-        errors.add(ValidationError("lineItems", "At least one line item is required."))
+        errors.add(ValidationError("lineItems", "At least one line item is required.", ErrorSeverity.CRITICAL))
     } else {
         var totalLineItemsAmount = 0.0
         invoice.lineItems.forEachIndexed { index, lineItem ->
@@ -170,7 +177,13 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
         }
         val billedTotal = invoice.billedAmount?.total ?: 0.0
         if (abs(totalLineItemsAmount - billedTotal) > FLOAT_TOLERANCE * 100) {
-            errors.add(ValidationError("billedAmount.total", "Sum of line item amounts ($totalLineItemsAmount) does not match billed total ($billedTotal)."))
+            errors.add(
+                ValidationError(
+                    "billedAmount.total",
+                    "Sum of line item amounts ($totalLineItemsAmount) does not match billed total ($billedTotal).",
+                    ErrorSeverity.CRITICAL
+                )
+            )
         }
     }
 
@@ -181,10 +194,10 @@ fun validateCustomer(customer: Customer): List<ValidationError> {
 
     val errors = mutableListOf<ValidationError>()
     if (customer.name.isNullOrBlank()) {
-        errors.add(ValidationError("name", "Customer name is required."))
+        errors.add(ValidationError("name", "Customer name is required.", ErrorSeverity.CRITICAL))
     }
     if (customer.billingAddress.isNullOrBlank()) {
-        errors.add(ValidationError("billingAddress", "Customer billing address is required."))
+        errors.add(ValidationError("billingAddress", "Customer billing address is required.", ErrorSeverity.MAJOR))
     }
 
     if (customer.shippingAddress.isNullOrBlank()) {
@@ -192,7 +205,7 @@ fun validateCustomer(customer: Customer): List<ValidationError> {
     }
 
     if (!customer.gstNumber.isNullOrBlank() && !gstRegex.matches(customer.gstNumber)) {
-        errors.add(ValidationError("gstNumber", "Customer GST number is invalid."))
+        errors.add(ValidationError("gstNumber", "Customer GST number is invalid.", ErrorSeverity.CRITICAL))
     }
 
     if (customer.pan.isNullOrBlank() || !panRegex.matches(customer.pan)) {
@@ -205,16 +218,16 @@ fun validateCustomer(customer: Customer): List<ValidationError> {
 fun validateVendor(vendor: Vendor): List<ValidationError> {
     val errors = mutableListOf<ValidationError>()
     if (vendor.name.isNullOrBlank()) {
-        errors.add(ValidationError("name", "Vendor name is required."))
+        errors.add(ValidationError("name", "Vendor name is required.", ErrorSeverity.CRITICAL))
     }
     if (vendor.address.isNullOrBlank()) {
-        errors.add(ValidationError("address", "Vendor address is required."))
+        errors.add(ValidationError("address", "Vendor address is required.", ErrorSeverity.CRITICAL))
     }
     if (vendor.gstNumber.isNullOrBlank() || !gstRegex.matches(vendor.gstNumber)) {
-        errors.add(ValidationError("gstNumber", "Vendor GST number is invalid."))
+        errors.add(ValidationError("gstNumber", "Vendor GST number is invalid.", ErrorSeverity.CRITICAL))
     }
     if (vendor.pan.isNullOrBlank() || !panRegex.matches(vendor.pan)) {
-        errors.add(ValidationError("pan", "Vendor PAN is invalid."))
+        errors.add(ValidationError("pan", "Vendor PAN is invalid.", ErrorSeverity.MAJOR))
     }
 
     if (vendor.upiId.isNullOrBlank() || !upiIdRegex.matches(vendor.upiId)) {
@@ -233,7 +246,7 @@ fun validateVendor(vendor: Vendor): List<ValidationError> {
 fun validateBankDetail(bankDetail: BankDetail, index: Int): List<ValidationError> {
     val errors = mutableListOf<ValidationError>()
     if (bankDetail.bankName.isNullOrBlank()) {
-        errors.add(ValidationError("bankName", "Bank name is required."))
+        errors.add(ValidationError("bankName", "Bank name is required.", ErrorSeverity.CRITICAL))
     }
 
     if (bankDetail.branch.isNullOrBlank()) {
@@ -241,13 +254,13 @@ fun validateBankDetail(bankDetail: BankDetail, index: Int): List<ValidationError
     }
 
     if (bankDetail.accountNumber.isNullOrBlank()) {
-        errors.add(ValidationError("accountNumber", "Account number is required."))
+        errors.add(ValidationError("accountNumber", "Account number is required.", ErrorSeverity.CRITICAL))
     }
     if (bankDetail.branchAddress.isNullOrBlank()) {
         errors.add(ValidationError("branchAddress", "Branch address is required."))
     }
     if (bankDetail.ifsc.isNullOrBlank()) {
-        errors.add(ValidationError("ifsc", "IFSC code is required."))
+        errors.add(ValidationError("ifsc", "IFSC code is required.", ErrorSeverity.CRITICAL))
     } else if (!ifscRegex.matches(bankDetail.ifsc)) {
         errors.add(ValidationError("ifsc", "IFSC code is invalid."))
     }
@@ -260,7 +273,7 @@ fun validateBilledAmount(billedAmount: BilledAmount): List<ValidationError> {
         errors.add(ValidationError("subTotal", "Subtotal must be non-negative."))
     }
     if (billedAmount.total == null || billedAmount.total < 0) {
-        errors.add(ValidationError("total", "Total must be non-negative."))
+        errors.add(ValidationError("total", "Total must be non-negative.", ErrorSeverity.CRITICAL))
     }
     if (billedAmount.balanceDue == null || billedAmount.balanceDue < 0) {
         errors.add(ValidationError("balanceDue", "Balance due must be non-negative."))
@@ -271,6 +284,7 @@ fun validateBilledAmount(billedAmount: BilledAmount): List<ValidationError> {
     if (billedAmount.amountInWords.isNullOrBlank()) {
         errors.add(ValidationError("amountInWords", "Amount in words is required."))
     }
+
     return errors
 }
 
@@ -278,7 +292,7 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
     val errors = mutableListOf<ValidationError>()
     // Use a field prefix like "description", "quantity", etc.
     if (item.description.isNullOrBlank()) {
-        errors.add(ValidationError("description", "Description is required."))
+        errors.add(ValidationError("description", "Description is required.", ErrorSeverity.CRITICAL))
     }
     if (item.discount == null) {
         errors.add(ValidationError("discount", "Discount is required."))
@@ -291,10 +305,10 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
         errors.addAll(validateQuantity(item.quantity, index).map { it.copy(field = "quantity.${it.field}") })
     }
     if (item.rate == null || item.rate <= 0) {
-        errors.add(ValidationError("rate", "Rate must be provided and greater than zero."))
+        errors.add(ValidationError("rate", "Rate must be provided and greater than zero.", ErrorSeverity.CRITICAL))
     }
     if (item.amount == null) {
-        errors.add(ValidationError("amount", "Amount is required."))
+        errors.add(ValidationError("amount", "Amount is required.", ErrorSeverity.CRITICAL))
     } else {
         // Calculate expected amount: quantity.value * rate - discount + taxes
         val quantityValue = item.quantity?.value ?: 0.0
@@ -320,8 +334,14 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
 
         val taxTotal = item.taxes.sumOf { it.amount ?: 0.0 }
         val expectedAmount = quantityValue * rate - discountAmount + taxTotal
-        if (abs(expectedAmount - item.amount) > FLOAT_TOLERANCE) {
-            errors.add(ValidationError("amount", "Amount (${item.amount}) does not match expected value ($expectedAmount) based on quantity, rate, discount, and taxes."))
+        if (abs(expectedAmount - item.amount) > FLOAT_TOLERANCE * 100) {
+            errors.add(
+                ValidationError(
+                    "amount",
+                    "Amount (${item.amount}) does not match expected value ($expectedAmount) based on quantity, rate, discount, and taxes.",
+                    ErrorSeverity.CRITICAL
+                )
+            )
         }
 
 
@@ -347,7 +367,13 @@ fun validateDiscount(discount: Discount, baseAmount: Double, lineItemIndex: Int)
     if (discount.percentage != null && discount.amount != null) {
         val expectedDiscountAmount = baseAmount * discount.percentage / 100.0
         if (abs(expectedDiscountAmount - discount.amount) > FLOAT_TOLERANCE) {
-            errors.add(ValidationError("amount", "Discount amount (${discount.amount}) does not match discount percentage (${discount.percentage}) on base amount ($baseAmount). Expected: $expectedDiscountAmount"))
+            errors.add(
+                ValidationError(
+                    "amount",
+                    "Discount amount (${discount.amount}) does not match discount percentage (${discount.percentage}) on base amount ($baseAmount). Expected: $expectedDiscountAmount",
+                    ErrorSeverity.MAJOR
+                )
+            )
         }
     }
     return errors
