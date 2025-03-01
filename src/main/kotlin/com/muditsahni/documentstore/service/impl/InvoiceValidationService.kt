@@ -294,6 +294,11 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
     if (item.description.isNullOrBlank()) {
         errors.add(ValidationError("description", "Description is required.", ErrorSeverity.CRITICAL))
     }
+
+    if (item.hsnSac.isNullOrBlank()) {
+        errors.add(ValidationError("hsnSac", "HSN/SAC id is required.", ErrorSeverity.CRITICAL))
+    }
+
     if (item.discount == null) {
         errors.add(ValidationError("discount", "Discount is required."))
         errors.add(ValidationError("discount.percentage", "Discount percentage is required."))
@@ -304,6 +309,25 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
     } else {
         errors.addAll(validateQuantity(item.quantity, index).map { it.copy(field = "quantity.${it.field}") })
     }
+
+    val isLineItemRateValid = item.rate != null && item.rate > 0
+    val isLineItemAmountValid = item.amount != null && item.amount > 0
+
+    if (!isLineItemRateValid && isLineItemAmountValid) {
+        errors.add(ValidationError("rate", "Rate must be provided and greater than zero.", ErrorSeverity.MINOR))
+    }
+
+    if (isLineItemRateValid && !isLineItemAmountValid) {
+        errors.add(ValidationError("amount", "Amount must be provided and greater than zero.", ErrorSeverity.MINOR))
+    }
+
+    if (!isLineItemRateValid && !isLineItemAmountValid) {
+        errors.add(ValidationError("rate", "Rate must be provided and greater than zero.", ErrorSeverity.CRITICAL))
+        errors.add(ValidationError("amount", "Amount must be provided and greater than zero.", ErrorSeverity.CRITICAL))
+    }
+
+
+
     if (item.rate == null || item.rate <= 0) {
         errors.add(ValidationError("rate", "Rate must be provided and greater than zero.", ErrorSeverity.CRITICAL))
     }
