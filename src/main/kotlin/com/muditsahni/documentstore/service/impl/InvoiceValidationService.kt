@@ -44,6 +44,14 @@ fun isValidDate(dateStr: String, formats: List<String> = listOf("dd\\MM\\yyyy", 
 fun parseDate(dateStr: String): LocalDate? {
     val formats = listOf(
         "dd-MMM-yy",    // 10-Sep-24
+        "dd-MMM-YY",   // 10-Sep-24
+        "yy-MMM-dd",   // 24-Sep-10
+        "YYYY-MM-dd",   // 2024-09-10
+        "YYYY-MM-dd",   // 2024-09-10
+        "dd/MMM/yy",    // 10/Sep/24
+        "dd/MM/yyyy",   // 10/09/2024
+        "yyyy-MM-dd",   // 2024-09-10
+        "dd/MM/yy",     // 10/09/24
         "dd-MMM-yyyy",   // 10-Sep-2024
         "dd\\MM\\yyyy"   // 10\09\2024
     )
@@ -175,15 +183,51 @@ fun validateInvoice(invoice: Invoice): List<ValidationError> {
             }
             totalLineItemsAmount += (lineItem.amount ?: 0.0)
         }
+
         val billedTotal = invoice.billedAmount?.total ?: 0.0
-        if (abs(totalLineItemsAmount - billedTotal) > FLOAT_TOLERANCE * 100) {
-            errors.add(
-                ValidationError(
-                    "billedAmount.total",
-                    "Sum of line item amounts ($totalLineItemsAmount) does not match billed total ($billedTotal).",
-                    ErrorSeverity.CRITICAL
+
+//        // Original validation: Sum of line item amounts equals billed total
+//        if (abs(totalLineItemsAmount - billedTotal) > FLOAT_TOLERANCE * 100) {
+//            errors.add(
+//                ValidationError(
+//                    "billedAmount.total",
+//                    "Sum of line item amounts ($totalLineItemsAmount) does not match billed total ($billedTotal).",
+//                    ErrorSeverity.CRITICAL
+//                )
+//            )
+//        }
+
+        // New validation: Sum of line items plus taxes from billed section equals total
+        val billedTaxesTotal = invoice.billedAmount?.taxes?.sumOf { it.amount ?: 0.0 } ?: 0.0
+        val expectedTotalWithBilledTaxes = totalLineItemsAmount + billedTaxesTotal
+
+        if (abs(expectedTotalWithBilledTaxes - billedTotal) <= FLOAT_TOLERANCE * 100) {
+            logger.info { "Invoice follows pattern: total = line items sum + billed taxes sum" }
+        } else {
+            // Only add this as an error if we already determined the simple sum doesn't match
+            // This avoids duplicate errors for the same issue
+            if (abs(totalLineItemsAmount - billedTotal) > FLOAT_TOLERANCE * 100) {
+                errors.add(
+                    ValidationError(
+                        "billedAmount.total",
+                        "Sum of line item amounts ($totalLineItemsAmount) plus billed taxes ($billedTaxesTotal) does not match billed total ($billedTotal). Expected: $expectedTotalWithBilledTaxes",
+                        ErrorSeverity.MAJOR
+                    )
                 )
-            )
+            }
+        }
+
+        // We can also check if the total matches line items before taxes plus billed taxes
+        // This handles the case where line item amounts already include their individual taxes
+        val lineItemsBeforeTaxes = invoice.lineItems.sumOf { lineItem ->
+            val itemAmount = lineItem.amount ?: 0.0
+            val itemTaxes = lineItem.taxes.sumOf { it.amount ?: 0.0 }
+            itemAmount - itemTaxes  // Subtract item taxes to get pre-tax amount
+        }
+        val expectedTotalWithSeparateTaxes = lineItemsBeforeTaxes + billedTaxesTotal
+
+        if (abs(expectedTotalWithSeparateTaxes - billedTotal) <= FLOAT_TOLERANCE * 100) {
+            logger.info { "Invoice follows pattern: total = line items (before taxes) + billed taxes sum" }
         }
     }
 
@@ -204,7 +248,7 @@ fun validateCustomer(customer: Customer): List<ValidationError> {
         errors.add(ValidationError("shippingAddress", "Customer shipping address is required."))
     }
 
-    if (!customer.gstNumber.isNullOrBlank() && !gstRegex.matches(customer.gstNumber)) {
+    if (customer.gstNumber.isNullOrBlank() || !gstRegex.matches(customer.gstNumber)) {
         errors.add(ValidationError("gstNumber", "Customer GST number is invalid.", ErrorSeverity.CRITICAL))
     }
 
@@ -328,12 +372,7 @@ fun validateLineItem(item: LineItem, index: Int): List<ValidationError> {
 
 
 
-    if (item.rate == null || item.rate <= 0) {
-        errors.add(ValidationError("rate", "Rate must be provided and greater than zero.", ErrorSeverity.CRITICAL))
-    }
-    if (item.amount == null) {
-        errors.add(ValidationError("amount", "Amount is required.", ErrorSeverity.CRITICAL))
-    } else {
+    if (item.amount != null && item.amount < 0) {
         // Calculate expected amount: quantity.value * rate - discount + taxes
         val quantityValue = item.quantity?.value ?: 0.0
         val rate = item.rate ?: 0.0
