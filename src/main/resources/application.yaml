@@ -46,7 +46,7 @@ gcp:
 document-parser:
   name: "documentparser"
   projectNumber: ${spring.cloud.gcp.project-number}
-  region: "asia-south2"
+  region: "asia-south1"
   uri: "api"
   version: "v1"
   upload: "upload"
