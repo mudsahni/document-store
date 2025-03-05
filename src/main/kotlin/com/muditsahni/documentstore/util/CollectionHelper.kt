@@ -7,81 +7,45 @@ import com.muditsahni.documentstore.exception.throwable.CollectionNotFoundExcept
 import com.muditsahni.documentstore.model.dto.response.GetDocumentResponse
 import com.muditsahni.documentstore.model.enum.Tenant
 import com.muditsahni.documentstore.model.entity.Collection
+import com.muditsahni.documentstore.model.entity.SYSTEM_USER
+import com.muditsahni.documentstore.model.entity.SignedUrlResponse
 import com.muditsahni.documentstore.model.entity.document.toDocument
 import com.muditsahni.documentstore.model.entity.document.toGetDocumentResponse
 import com.muditsahni.documentstore.model.entity.toCollection
-import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withTimeout
+import com.muditsahni.documentstore.model.enum.CollectionStatus
+import com.muditsahni.documentstore.model.enum.DocumentStatus
+import com.muditsahni.documentstore.model.enum.DocumentType
+import com.muditsahni.documentstore.service.EventStreamService
+import com.muditsahni.documentstore.service.StorageService
 
 import mu.KotlinLogging
-import java.util.concurrent.ConcurrentHashMap
 
 object CollectionHelper {
 
     private val logger = KotlinLogging.logger {}
-
-    // Collection cache for better performance
-    private val collectionCache = ConcurrentHashMap<String, Pair<Collection, Long>>()
-    // Cache expiration time in milliseconds (2 minutes)
-    private const val CACHE_EXPIRY_MS = 120000L
-
-    // Timeout for firestore operations (10 seconds)
-    private const val FIRESTORE_TIMEOUT_MS = 10000L
 
     suspend fun getCollection(
         firestore: Firestore,
         collectionId: String,
         tenant: Tenant
     ): Collection {
-        val cacheKey = "${tenant.tenantId}:$collectionId"
-        val now = System.currentTimeMillis()
 
-        // Try cache first
-        collectionCache[cacheKey]?.let { (cachedCollection, timestamp) ->
-            if (now - timestamp < CACHE_EXPIRY_MS) {
-                logger.debug { "Collection cache hit for $collectionId" }
-                return cachedCollection.copy() // Return a copy to prevent modification of cached object
-            }
-            // Remove expired entry
-            collectionCache.remove(cacheKey)
+        val collectionRef = firestore
+            .collection("tenants")
+            .document(tenant.tenantId)
+            .collection("collections")
+            .document(collectionId)
+            .get()
+            .await()
+
+        if (!collectionRef.exists()) {
+            throw CollectionNotFoundException(MajorErrorCode.GEN_MAJ_COL_003.code, MajorErrorCode.GEN_MAJ_COL_003.message)
         }
 
-        try {
-            return withTimeout(FIRESTORE_TIMEOUT_MS) {
-
-                val collectionRef = firestore
-                    .collection("tenants")
-                    .document(tenant.tenantId)
-                    .collection("collections")
-                    .document(collectionId)
-                    .get()
-                    .await()
-
-                if (!collectionRef.exists()) {
-                    logger.warn { "Collection not found: $collectionId for tenant ${tenant.tenantId}" }
-                    throw CollectionNotFoundException(
-                        MajorErrorCode.GEN_MAJ_COL_003.code,
-                        MajorErrorCode.GEN_MAJ_COL_003.message
-                    )
-                }
-
-                logger.info { "Collection fetched from Firestore: $collectionId" }
-                val collection = collectionRef.toCollection()
-                logger.info("Collection object fetched and converted to collection class")
-                // Store in cache
-                collectionCache[cacheKey] = collection to now
-                collection
-            }
-        } catch (e: TimeoutCancellationException) {
-            logger.error { "Timeout fetching collection $collectionId from Firestore" }
-            throw CollectionNotFoundException(
-                MajorErrorCode.GEN_MAJ_COL_003.code,
-                "Timeout fetching collection: $collectionId"
-            )
-        } catch (e: Exception) {
-            logger.error(e) { "Error fetching collection $collectionId from Firestore" }
-            throw e
-        }
+        logger.info("Collection fetched from Firestore")
+        val collection = collectionRef.toCollection()
+        logger.info("Collection object fetched and converted to collection class")
+        return collection
     }
 
     suspend fun getCollectionDocuments(
@@ -89,30 +53,21 @@ object CollectionHelper {
         collectionId: String,
         tenant: Tenant
     ): Map<String, GetDocumentResponse> {
-        try {
-            return withTimeout(FIRESTORE_TIMEOUT_MS * 2) {
-                val documents = firestore
-                    .collection("tenants")
-                    .document(tenant.tenantId)
-                    .collection("documents")
-                    .whereEqualTo("collectionId", collectionId)
-                    .get()
-                    .await()
-                    .documents
-                    .map { it.toDocument() }
 
-                val documentMap = documents.associateBy({ it.id }, { it.toGetDocumentResponse() })
+        val documents = firestore
+            .collection("tenants")
+            .document(tenant.tenantId)
+            .collection("documents")
+            .whereEqualTo("collectionId", collectionId)
+            .get()
+            .await()
+            .documents
+            .map { it.toDocument() }
 
-                logger.info { "Retrieved ${documents.size} documents for collection $collectionId" }
-                documentMap
-            }
-        } catch (e: TimeoutCancellationException) {
-            logger.error { "Timeout fetching documents for collection $collectionId" }
-            return emptyMap()
-        } catch (e: Exception) {
-            logger.error(e) { "Error fetching documents for collection $collectionId" }
-            return emptyMap()
-        }
+        val documentMap = documents.associateBy({ it.id }, { it.toGetDocumentResponse() })
+
+        logger.info("Collection fetched with documents from Firestore")
+        return documentMap
     }
 
     suspend fun saveCollection(
@@ -120,44 +75,146 @@ object CollectionHelper {
         tenant: Tenant,
         collection: Collection
     ) {
-        try {
-            // Ensure collection has updated timestamp
-            collection.updatedAt = Timestamp.now()
+        firestore
+            .collection("tenants")
+            .document(tenant.tenantId)
+            .collection("collections")
+            .document(collection.id)
+            .set(collection)
+            .await()
 
-            // Update the cache first to ensure immediate consistency for subsequent reads
-            val cacheKey = "${tenant.tenantId}:${collection.id}"
-            collectionCache[cacheKey] = collection.copy() to System.currentTimeMillis()
+        logger.info("Collection updated in Firestore")
+    }
 
-            withTimeout(FIRESTORE_TIMEOUT_MS) {
-                firestore
-                    .collection("tenants")
-                    .document(tenant.tenantId)
-                    .collection("collections")
-                    .document(collection.id)
-                    .set(collection)
-                    .await()
-            }
+    suspend fun updateCollectionDocuments(
+        firestore: Firestore,
+        tenant: Tenant,
+        collectionId: String,
+        documentIds: Map<String, DocumentStatus>
+    ) {
 
-            logger.info { "Collection ${collection.id} saved in Firestore" }
-        } catch (e: TimeoutCancellationException) {
-            logger.error { "Timeout saving collection ${collection.id} to Firestore" }
-            throw e
-        } catch (e: Exception) {
-            logger.error(e) { "Error saving collection ${collection.id}" }
-            throw e
+        val collection = getCollection(firestore, collectionId, tenant)
+
+        collection.documents.putAll(documentIds)
+        collection.updatedAt = Timestamp.now()
+        collection.updatedBy = SYSTEM_USER
+
+        logger.info("Collection object updated with ${documentIds.size} new documents")
+        // update collection in firestore
+        saveCollection(firestore, tenant, collection)
+    }
+
+    suspend fun updateCollectionDocuments(
+        firestore: Firestore,
+        tenant: Tenant,
+        collectionId: String,
+        documentId: String,
+        documentStatus: DocumentStatus,
+        eventService: EventStreamService? = null
+    ): Collection {
+
+        val collection = getCollection(firestore, collectionId, tenant)
+
+        if (collection.status == CollectionStatus.RECEIVED) {
+            collection.status = CollectionStatus.IN_PROGRESS
         }
+
+        collection.documents[documentId] = documentStatus
+
+        if (collection.status == CollectionStatus.IN_PROGRESS) {
+            val inProgressDocuments = collection.documents.count { it.value == DocumentStatus.IN_PROGRESS }
+            if (inProgressDocuments == collection.documents.size) {
+                eventService?.completeStream(collectionId)
+            }
+            val notPendingDocuments = collection.documents.count { it.value != DocumentStatus.PENDING }
+            if (notPendingDocuments == 0 || notPendingDocuments+1 == collection.documents.size) {
+                collection.status = CollectionStatus.DOCUMENTS_UPLOAD_COMPLETE
+            }
+        }
+
+        collection.updatedAt = Timestamp.now()
+        collection.updatedBy = SYSTEM_USER
+
+        logger.info("Collection object updated with new document: $documentId")
+        // update collection in firestore
+        saveCollection(firestore, tenant, collection)
+
+        return collection
     }
 
-    fun clearCache() {
-        collectionCache.clear()
-        logger.info { "Collection cache cleared" }
+
+    suspend fun updateCollectionStatus(
+        firestore: Firestore,
+        tenant: Tenant,
+        collectionId: String,
+        status: CollectionStatus
+    ) {
+
+        val collection = getCollection(firestore, collectionId, tenant)
+
+        collection.status = status
+        collection.updatedAt = Timestamp.now()
+        collection.updatedBy = SYSTEM_USER
+
+        logger.info("Collection object updated with new status: $status")
+        // update collection in firestore
+        saveCollection(firestore, tenant, collection)
     }
 
-    fun invalidateCache(tenantId: String, collectionId: String) {
-        val cacheKey = "$tenantId:$collectionId"
-        collectionCache.remove(cacheKey)
-        logger.debug { "Cache invalidated for collection $collectionId" }
-    }
+    suspend fun createAndSaveDocumentsForUpload(
+        firestore: Firestore,
+        storageService: StorageService,
+        userId: String,
+        tenant: Tenant,
+        collectionId: String,
+        documents: Map<String, String>
+    ): Map<String, SignedUrlResponse> {
 
+        val documentIdsWithSignedUrls = mutableMapOf<String, SignedUrlResponse>()
+        val documentIdsWithStatus = mutableMapOf<String, DocumentStatus>()
+
+        documents.forEach {
+
+            // create document object
+            val document = DocumentHelper.createDocumentObject(
+                userId = userId,
+                name = it.key, // document name
+                collectionId = collectionId,
+                tenant = tenant,
+                filePath = "${tenant.tenantId}/${collectionId}/${it.key}",
+                type = DocumentType.INVOICE,
+                status = DocumentStatus.PENDING
+            )
+
+            // save document
+            DocumentHelper.saveDocument(firestore, tenant, document)
+            documentIdsWithStatus[document.id] = DocumentStatus.PENDING
+            documentIdsWithSignedUrls[document.id] = storageService.getSignedUrlForDocumentUpload(
+                document.id,
+                "${tenant.tenantId}/${collectionId}/${document.id}",
+                it.key,
+                it.value
+            )
+        }
+
+        // update collection
+        updateCollectionDocuments(
+            firestore,
+            tenant,
+            collectionId,
+            documentIdsWithStatus
+        )
+
+        // update user
+        UserHelper.updateUserDocuments(
+            firestore,
+            userId,
+            tenant,
+            documentIdsWithStatus.keys.toList()
+        )
+
+        return documentIdsWithSignedUrls
+
+    }
 
 }
