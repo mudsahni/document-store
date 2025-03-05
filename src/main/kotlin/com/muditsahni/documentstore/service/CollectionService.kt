@@ -13,7 +13,6 @@ import com.muditsahni.documentstore.exception.throwable.CollectionCreationError
 import com.muditsahni.documentstore.model.enum.CollectionStatus
 import com.muditsahni.documentstore.model.enum.CollectionType
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import com.muditsahni.documentstore.model.entity.Collection
@@ -33,6 +32,7 @@ import com.muditsahni.documentstore.util.CloudTasksHelper
 import com.muditsahni.documentstore.util.CollectionHelper
 import org.springframework.beans.factory.annotation.Qualifier
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 
 abstract class CollectionService(
     protected val eventStreamService: EventStreamService,
@@ -53,11 +53,14 @@ abstract class CollectionService(
 
 ) {
     companion object {
-        protected val logger = KotlinLogging.logger {
-            CollectionService::class.java.name
-        }
-        protected val objectMapper = getObjectMapper()
+        private val logger = KotlinLogging.logger {}
+        private val objectMapper = getObjectMapper()
 
+        // Cache for pending task tracking to avoid duplicate processing
+        private val pendingTasks = ConcurrentHashMap<String, Long>()
+
+        // Constants
+        private const val TASK_EXPIRY_MS = 3600000L // 1 hour
     }
 
     fun emitCollectionStatusEvent(collection: Collection) {

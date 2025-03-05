@@ -4,7 +4,6 @@ import com.google.cloud.firestore.DocumentReference
 import com.google.cloud.firestore.FieldValue
 import com.google.cloud.firestore.Firestore
 import mu.KotlinLogging
-import java.sql.BatchUpdateException
 
 /**
  * Represents different types of field updates

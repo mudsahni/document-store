@@ -1,4 +1,4 @@
-{ "prompt": "Please extract the invoice data from this document into the following structured JSON format and return only the json. Please add only the fields and values which are available in the PDF. There could be multiple line items in the invoice, ensure to extract and return them all. Don't worry about keeping the response short.",
+{ "prompt": "Please extract the invoice data from this document into the following structured JSON format and return only the json. Please add only the fields and values which are available in the file. There could be multiple line items in the invoice, ensure to extract and return them all. Don't worry about keeping the response short.",
   "template": {
     "invoice": {
       "invoice_number": "string",
